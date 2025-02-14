@@ -1,4 +1,4 @@
-## 🔏 Notification Hub
+## 🔔 Notification Hub
 ![License](https://img.shields.io/badge/license-MIT-blue.svg) [![Latest Stable Version](https://img.shields.io/packagist/v/huseyinfiliz/notificationhub.svg)](https://packagist.org/packages/huseyinfiliz/notificationhub) [![Total Downloads](https://img.shields.io/packagist/dt/huseyinfiliz/notificationhub.svg)](https://packagist.org/packages/huseyinfiliz/notificationhub)
 
 ###  📝 Description
