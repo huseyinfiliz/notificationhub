@@ -6,7 +6,7 @@ use Flarum\Api\Serializer\AbstractSerializer;
 
 class NotificationTypeSerializer extends AbstractSerializer
 {
-    protected $type = 'posts';
+    protected $type = 'notification-types';
 
     protected function getDefaultAttributes($model): array
     {
