@@ -1,0 +1,55 @@
+.NotificationHubSettingsPage {
+  padding: 20px;
+
+  .NotificationTypesPage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+
+    h2 {
+      margin: 0;
+    }
+  }
+
+  .NotificationTypesPage-list {
+    .NotificationTypeItem {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid var(--control-bg);
+
+      &--header {
+        font-weight: bold;
+        background-color: var(--control-bg);
+        color: var(--control-color);
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+
+        .NotificationTypeItem-name {
+          flex-grow: 0.7;
+          width: 60%;
+
+          i {
+            margin-right: 3px;
+          }
+        }
+      }
+
+      .NotificationTypeItem-name {
+        display: flex;
+        align-items: center;
+        flex-grow: 0.7;
+      }
+
+      .NotificationTypeItem-actions {
+        flex-grow: 0.3;
+        text-align: -webkit-right;
+
+        .ButtonGroup {
+          float: none;
+          justify-content: flex-end;
+        }
+      }
+    }
+  }
+}
