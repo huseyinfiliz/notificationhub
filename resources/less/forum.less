@@ -1,0 +1,92 @@
+.huseyinfilizNotificationModal {
+    .RecipientsInput {
+        padding-top: 0;
+        padding-bottom: 0;
+        height: auto;
+        position: relative;
+
+        input {
+            display: inline;
+            outline: none;
+            margin-top: -2px;
+            border: 0 !important;
+            padding: 0;
+            width: 100%;
+            margin-right: -100%;
+            background: transparent !important;
+        }
+
+        .LoadingIndicator-container {
+            height: 34px;
+            width: 34px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            pointer-events: none;
+        }
+
+        .Dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            display: block;
+        }
+    }
+
+    .RecipientsInput-recipient {
+        cursor: not-allowed;
+    }
+
+    .RecipientsInput-selected {
+        .RecipientsInput-recipient {
+            margin-right: 5px;
+
+            &:last-child {
+                margin-right: 10px;
+            }
+        }
+    }
+
+    .RecipientLabel {
+        font-size: 85%;
+        font-weight: 600;
+        display: inline-block;
+        padding: 0.1em 0.5em;
+        border-radius: @border-radius;
+        background: @control-bg;
+        color: @control-color;
+        text-transform: none;
+
+        &.colored {
+            color: @body-bg !important;
+        }
+    }
+
+    .SearchResultKind {
+        display: inline-block;
+        min-width: 5em;
+        color: #aaa;
+        font-style: italic;
+    }
+
+    textarea {
+        resize: vertical;
+        width: 100%;
+    }
+
+
+	.Select, .Select-input {
+		width: 100%;
+	}
+}
+
+.Notification.Notification--customNotification {
+    background-color: var(--body-bg);
+    border-radius: var(--border-radius);
+  &:hover,
+  &:focus,
+  &:focus-within {
+    background-color: var(--body-bg);
+  }
+}
