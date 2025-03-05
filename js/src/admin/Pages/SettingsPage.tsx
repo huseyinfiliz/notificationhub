@@ -7,28 +7,28 @@ import Modal from 'flarum/common/components/Modal';
 import { IInternalModalAttrs } from 'flarum/common/components/Modal';
 
 interface NotificationTypeAttributes {
-  id?: number;
-  name: string;
-  excerpt_key: string;
-  default_icon: string | null;
-  default_message_key: string | null;
-  description: string | null;
-  is_active: boolean;
-  sort_order: number;
-  permission: string | null;
-  color: string | null;
-  default_url: string | null;
-  default_recipients: string | null;
+    id?: number;
+    name: string;
+    excerpt_key: string;
+    default_icon: string | null;
+    default_message_key: string | null;
+    description: string | null;
+    is_active: boolean;
+    sort_order: number;
+    permission: string | null;
+    color: string | null;
+    default_url: string | null;
+    default_recipients: string | null;
 }
 
 interface NotificationType {
-  id: string;
-  type: string;
-  attributes: NotificationTypeAttributes;
+    id: string;
+    type: string;
+    attributes: NotificationTypeAttributes;
 }
 interface NotificationTypeModalAttrs extends IInternalModalAttrs {
-  notificationType?: NotificationType;
-  onSave: (notificationType: NotificationType) => void;
+    notificationType?: NotificationType;
+    onSave: (notificationType: NotificationType) => void;
 }
 class AddNotificationTypeModal extends Modal<NotificationTypeModalAttrs> {
     private formData: Partial<NotificationTypeAttributes>;
@@ -77,11 +77,11 @@ class AddNotificationTypeModal extends Modal<NotificationTypeModalAttrs> {
             }, [
                 // Form grupları (artık düzenleme modunda devre dışı DEĞİL)
                 this.buildFormGroup('name', 'text', t('fields.name')),
+                this.buildFormGroup('description', 'text', t('fields.description')),
                 this.buildFormGroup('default_icon', 'text', t('fields.icon')),
                 this.buildFormGroup('default_message_key', 'text', t('fields.default_message_key')),
                 this.buildFormGroup('default_url', 'text', t('fields.default_url')),
                 this.buildFormGroup('excerpt_key', 'text', t('fields.excerpt_key')),
-                //this.buildFormGroup('description', 'text', t('fields.description')),
                 //this.buildFormGroup('permission', 'text', t('fields.permission')),
                 //this.buildFormGroup('color', 'text', t('fields.color')),
                 //this.buildFormGroup('default_recipients', 'text', t('fields.default_recipients')),
@@ -132,32 +132,32 @@ class AddNotificationTypeModal extends Modal<NotificationTypeModalAttrs> {
     }
 
     onsubmit(e: SubmitEvent) {
-      e.preventDefault();
-      this.sending = true;
+        e.preventDefault();
+        this.sending = true;
 
-      const isNew = !this.attrs.notificationType;
-      const url = isNew
-        ? `${app.forum.attribute('apiUrl')}/notification-types-create`
-        : `${app.forum.attribute('apiUrl')}/notification-types/${this.attrs.notificationType?.id}`; // Doğru ID kullanımı
+        const isNew = !this.attrs.notificationType;
+        const url = isNew
+            ? `${app.forum.attribute('apiUrl')}/notification-types-create`
+            : `${app.forum.attribute('apiUrl')}/notification-types/${this.attrs.notificationType?.id}`; // Doğru ID kullanımı
 
-      // API isteği
-      app.request({
-          method: isNew ? 'POST' : 'PATCH',
-          url: url,
-          body: { data: { type: 'notification-types', attributes: this.formData, ...(isNew ? {} : { id: this.attrs.notificationType!.id }) } }, // id'yi gönder (sadece güncelleme için)
-      })
-      .then((response: any) => { // `any` tipini geçici olarak kullanıyoruz.
-          // Başarılı
-        this.attrs.onSave(response.data);  // SettingsPage'deki onSave fonksiyonuna güncellenmiş veriyi gönder
-        this.hide();
-      })
-      .catch(error => {
-          // Hata işleme
-          this.sending = false; // Gönderme durumunu sıfırla
-          console.error("Error saving notification type:", error);
-          // Kullanıcıya hata mesajı göster (isteğe bağlı)
-          m.redraw();
-      });
+        // API isteği
+        app.request({
+            method: isNew ? 'POST' : 'PATCH',
+            url: url,
+            body: { data: { type: 'notification-types', attributes: this.formData, ...(isNew ? {} : { id: this.attrs.notificationType!.id }) } }, // id'yi gönder (sadece güncelleme için)
+        })
+        .then((response: any) => { // `any` tipini geçici olarak kullanıyoruz.
+            // Başarılı
+          this.attrs.onSave(response.data);  // SettingsPage'deki onSave fonksiyonuna güncellenmiş veriyi gönder
+          this.hide();
+        })
+        .catch(error => {
+            // Hata işleme
+            this.sending = false; // Gönderme durumunu sıfırla
+            console.error("Error saving notification type:", error);
+            // Kullanıcıya hata mesajı göster (isteğe bağlı)
+            m.redraw();
+        });
     }
 }
 
@@ -174,68 +174,74 @@ export default class SettingsPage extends ExtensionPage {
 
   content() {
     return m('.NotificationHubSettingsPage', [
-      m('.container', [
-        m('.NotificationTypesPage-header', [
-          m('h3', app.translator.trans('huseyinfiliz-notificationhub.admin.title.page_title')), // Başlık eklendi
-          Button.component({
-            className: 'Button Button--primary',
-            onclick: () => this.showAddModal(),
-          }, app.translator.trans('huseyinfiliz-notificationhub.admin.settings.add_button')),
+        m('.container', [
+            m('.NotificationTypesPage-header', [
+
+            ]),
+            this.buildContent(),
         ]),
-        this.buildContent(),
-      ]),
     ]);
   }
 
   private buildContent() {
     if (this.loading) {
-      return m('.NotificationTypesPage-loading', LoadingIndicator.component());
+        return m('.NotificationTypesPage-loading', LoadingIndicator.component());
     }
 
     if (this.error) {
-      return m('.NotificationTypesPage-error', Alert.component({ type: 'error' }, this.error));
+        return m('.NotificationTypesPage-error', Alert.component({ type: 'error' }, this.error));
     }
 
-    if (!this.notificationTypes?.length) {
-      return m('.NotificationTypesPage-empty', app.translator.trans('huseyinfiliz-notificationhub.admin.settings.no_data'));
-    }
-
-    return m('.NotificationTypesPage-list', [
-      // Başlık satırı
-      m('.NotificationTypeItem.NotificationTypeItem--header', [
-        m('.NotificationTypeItem-name', app.translator.trans('huseyinfiliz-notificationhub.admin.settings.fields.name')),
-        m('.NotificationTypeItem-actions', app.translator.trans('huseyinfiliz-notificationhub.admin.settings.fields.active') + ' / ' + app.translator.trans('huseyinfiliz-notificationhub.admin.settings.fields.actions'))
-      ]),
-      // Bildirim türleri listesi
-      this.notificationTypes.map((type) =>
-        m('.NotificationTypeItem', [
-          m('.NotificationTypeItem-name', m('i', { className: type.attributes?.default_icon || 'fas fa-bell' }), type.attributes?.name),
-          m('.NotificationTypeItem-actions',  // İşlemler (Aktif/Pasif, Düzenle, Sil)
-            m('.ButtonGroup', [
-              Button.component({
-                className: 'Button Button--icon',
-                icon: type.attributes?.is_active ? 'fas fa-check' : 'fas fa-times',
-                style: { color: type.attributes?.is_active ? 'green' : 'red' },
-                disabled: true, // Buton devre dışı (disable)
-              }),
-              Button.component({
-                className: 'Button Button--icon Button--warning',
-                icon: 'fas fa-edit',
-                onclick: () => this.showEditModal(type),
-              }),
-              Button.component({
-                className: 'Button Button--icon Button--danger',
-                icon: 'fas fa-trash',
-                onclick: () => this.deleteNotificationType(type.id),
-              }),
+    return m('.NotificationTypesPage-content', [ // .NotificationTypesPage-list yerine .NotificationTypesPage-content
+        m('.header', { className: 'header' }, [ // div yerine m('.header')
+            m('h1', app.translator.trans('huseyinfiliz-notificationhub.admin.title.page_title')), // Başlık
+            m('button', {
+                className: 'add-button',
+                onclick: () => this.showAddModal()
+            }, [
+                m('i', { className: 'fas fa-plus' }),
+                ' ', // Ara boşluk
+                app.translator.trans('huseyinfiliz-notificationhub.admin.settings.add_button') // "Add New" çevirisi
             ])
-          ),
-        ])
-      ),
+        ]),
+
+        m('.separator', { className: 'separator' }), // div yerine m('.separator')
+
+        m('.notification-list', { className: 'notification-list' }, // div yerine m('.notification-list')
+            this.notificationTypes && this.notificationTypes.length > 0 ? (
+                this.notificationTypes.map((type) =>
+                    m('.notification-card', { className: 'notification-card' }, [ // div yerine m('.notification-card')
+                        m('.status-indicator', { className: 'status-indicator ' + (type.attributes?.is_active ? 'active' : 'inactive') }), // div yerine m('.status-indicator'), active/inactive class'ı dinamik
+                        m('.notification-icon', { className: 'notification-icon' }, // div yerine m('.notification-icon')
+                            m('i', { className: type.attributes?.default_icon || 'fas fa-bell' }) // Bildirim ikonu, varsayılan ikon fallback ile
+                        ),
+                        m('.notification-content', { className: 'notification-content' }, [ // div yerine m('.notification-content')
+                            m('.notification-title', { className: 'notification-title' }, [ // div yerine m('.notification-title')
+                                m('span', { className: 'notification-name' }, type.attributes?.name), // Bildirim adı
+                            ]),
+                            m('.notification-description', { className: 'notification-description' }, type.attributes?.description), // Bildirim açıklaması
+                        ]),
+                        m('.notification-actions', { className: 'notification-actions' }, [ // div yerine m('.notification-actions')
+                            m('button', {
+                                className: 'action-button',
+                                onclick: () => this.showEditModal(type)
+                            }, m('i', { className: 'fas fa-edit' })), // Düzenle butonu
+                            m('button', {
+                                className: 'action-button delete',
+                                onclick: () => this.deleteNotificationType(type.id)
+                            }, m('i', { className: 'fas fa-trash' })), // Sil butonu
+                        ]),
+                    ])
+                )
+            ) : (
+                m('.NotificationTypesPage-empty', app.translator.trans('huseyinfiliz-notificationhub.admin.settings.no_data')) // Veri yoksa mesaj
+            )
+        ),
     ]);
   }
 
-  private showAddModal() {
+
+    private showAddModal() {
         app.modal.show(AddNotificationTypeModal, {
             onSave: (type: NotificationType) => {
                 this.notificationTypes = [...(this.notificationTypes || []), type];
