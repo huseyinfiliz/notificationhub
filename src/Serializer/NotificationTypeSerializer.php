@@ -19,7 +19,7 @@ class NotificationTypeSerializer extends AbstractSerializer
             'default_message_key' => $model->default_message_key,
             'is_active'         => $model->is_active,
             'sort_order'        => $model->sort_order,
-            //'description'       => $model->description,
+            'description'       => $model->description,
             //'permission'        => $model->permission,
             //'color'             => $model->color,
             //'default_recipients' => $model->default_recipients,
