@@ -13,6 +13,8 @@ use huseyinfiliz\notificationhub\Controller\ListNotificationController;
 use huseyinfiliz\notificationhub\Controller\DeleteNotificationController;
 use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
 use huseyinfiliz\notificationhub\Model\NotificationHub;
+use huseyinfiliz\notificationhub\Jobs\SendCustomNotifications;
+
 
 return [
     (new Extend\Frontend('forum'))
