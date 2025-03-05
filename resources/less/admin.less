@@ -1,55 +1,189 @@
 .NotificationHubSettingsPage {
-  padding: 20px;
 
-  .NotificationTypesPage-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+    .NotificationTypesPage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
 
-    h2 {
-      margin: 0;
-    }
-  }
-
-  .NotificationTypesPage-list {
-    .NotificationTypeItem {
-      display: flex;
-      align-items: center;
-      padding: 10px;
-      border-bottom: 1px solid var(--control-bg);
-
-      &--header {
-        font-weight: bold;
-        background-color: var(--control-bg);
-        color: var(--control-color);
-        border-radius: var(--border-radius) var(--border-radius) 0 0;
-
-        .NotificationTypeItem-name {
-          flex-grow: 0.7;
-          width: 60%;
-
-          i {
-            margin-right: 3px;
-          }
+        h2 {
+            margin: 0;
         }
-      }
+    }
 
-      .NotificationTypeItem-name {
+    .NotificationTypesPage-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+    }
+
+    .header h1 {
+        font-size: 1.25rem;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+
+    .add-button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+        background-color: var(--button-bg);
+        color: var(--button-color);
+        border: none;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .add-button:hover {
+        background-color: var(--button-bg-active);
+    }
+
+    .add-button i {
+        margin-right: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+
+    .notification-card {
+        position: relative;
         display: flex;
         align-items: center;
-        flex-grow: 0.7;
-      }
-
-      .NotificationTypeItem-actions {
-        flex-grow: 0.3;
-        text-align: -webkit-right;
-
-        .ButtonGroup {
-          float: none;
-          justify-content: flex-end;
-        }
-      }
+        padding: 0.75rem;
+        background: var(--body-bg-shaded);
+        border: 1px solid var(--control-bg);
+        border-radius: 0.375rem;
+        transition: background-color 0.2s;
+		margin-bottom: 0.5rem;
     }
-  }
+
+    .notification-card:hover {
+        background-color: var(--discussion-list-item-bg-hover);
+    }
+
+    .status-indicator {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        border-top-left-radius: 0.375rem;
+        border-bottom-left-radius: 0.375rem;
+    }
+
+    .status-indicator.active {
+        background-color: #4CAF50;
+    }
+
+    .status-indicator.inactive {
+        background-color: #F44336;
+    }
+
+    .notification-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-color);
+        margin-left: 0.5rem;
+		font-size: 1.1rem;
+    }
+
+    .notification-content {
+        flex: 1;
+        margin-left: 0.5rem;
+        min-width: 0;
+    }
+
+    .notification-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .notification-name {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--text-color);
+		white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+    .notification-description {
+        font-size: 0.875rem;
+        color: #6b7280;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .notification-actions {
+        display: flex;
+        gap: 0.25rem;
+        margin-left: 1rem;
+    }
+
+    .action-button {
+        width: 32px; /* Genişlik ikona göre ayarlandı */
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        background-color: var(--button-bg); /* Arkaplan eklendi */
+        border-radius: 0.25rem;
+        color: var(--button-color);
+        cursor: pointer;
+        transition: all 0.2s;
+        padding: 0; /* Padding kaldırıldı, sadece ikon */
+        gap: 0; /* Gap kaldırıldı */
+        font-size: 0.8rem; /* İsteğe bağlı: Metin boyutunu küçültme */
+    }
+
+    .action-button:hover {
+        background-color: var(--button-bg-active); /* Hover rengi güncellendi */
+        color: var(--button-color);
+    }
+
+    .action-button.delete {
+        background-color: var(--control-danger-bg); /* Delete butonu arkaplanı eklendi */
+    }
+
+    .action-button.delete:hover {
+        background-color: var(--control-danger-bg-hover); /* Delete hover rengi güncellendi */
+        color: var(--button-color);
+    }
+
+
+    @media (max-width: 640px) {
+
+        .notification-card {
+            padding: 0.5rem;
+        }
+
+        .notification-icon {
+            width: 32px;
+            height: 32px;
+        }
+
+        .action-button {
+            width: 28px; /* Mobil genişlik ikona göre ayarlandı */
+            height: 28px;
+            padding: 0; /* Mobil padding kaldırıldı */
+            font-size: 0.7rem; /* İsteğe bağlı: Mobil metin boyutu */
+        }
+    }
 }
