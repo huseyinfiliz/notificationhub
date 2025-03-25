@@ -44,6 +44,8 @@ huseyinfiliz-notificationhub:
       no_notification_types: "No active notification types found."
       preview_title: "Notification Preview"
       preview_message_placeholder: "Notification message.."
+    settings:
+      notify_custom: "Custom notifications"
 
 
     recipient_kinds:

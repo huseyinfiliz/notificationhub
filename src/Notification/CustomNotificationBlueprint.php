@@ -3,11 +3,13 @@
 namespace huseyinfiliz\notificationhub\Notification;
 
 use Flarum\Notification\Blueprint\BlueprintInterface;
+use Flarum\Notification\MailableInterface;
 use Flarum\User\User;
 use Illuminate\Support\Str;
 use huseyinfiliz\notificationhub\Model\NotificationHub;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class CustomNotificationBlueprint implements BlueprintInterface
+class CustomNotificationBlueprint implements BlueprintInterface, MailableInterface
 {
 
     protected string $message;
@@ -68,5 +70,15 @@ class CustomNotificationBlueprint implements BlueprintInterface
     public static function getSubjectModel()
     {
         return NotificationHub::class;
+    }
+
+    public function getEmailSubject(TranslatorInterface $translator)
+    {
+        return $this->notificationhub->name;
+    }
+
+    public function getEmailView()
+    {
+        return $this->message;
     }
 }
