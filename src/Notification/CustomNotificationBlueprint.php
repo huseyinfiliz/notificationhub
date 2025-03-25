@@ -79,6 +79,6 @@ class CustomNotificationBlueprint implements BlueprintInterface, MailableInterfa
 
     public function getEmailView()
     {
-        return $this->message;
+        return ['text' => 'huseyinfiliz-notificationhub::email'];
     }
 }

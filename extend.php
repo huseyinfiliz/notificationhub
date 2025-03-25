@@ -33,6 +33,9 @@ return [
     (new Extend\Notification())
         ->type(CustomNotificationBlueprint::class, NotificationTypeSerializer::class, ['alert', 'email']),
 
+    (new Extend\View)
+        ->namespace('huseyinfiliz-notificationhub', __DIR__.'/resources/views'),
+
     (new Extend\Routes('api'))
         ->get('/notification-types', 'huseyinfiliz.notification-types.list', ListNotificationController::class)
         ->post('/notification-types-create', 'huseyinfiliz.notification-types.create', CreateNotificationController::class)
