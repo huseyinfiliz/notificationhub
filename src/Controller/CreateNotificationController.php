@@ -3,6 +3,7 @@
 namespace huseyinfiliz\notificationhub\Controller;
 
 use Flarum\Api\Controller\AbstractCreateController;
+use Flarum\Http\RequestUtil;
 use huseyinfiliz\notificationhub\Model\NotificationHub;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Tobscure\JsonApi\Document;
@@ -21,6 +22,9 @@ class CreateNotificationController extends AbstractCreateController
 
     protected function data(Request $request, Document $document)
     {
+        $actor = RequestUtil::getActor($request);
+        $actor->assertCan('huseyinfiliz-notificationhub.send-all');
+
         $data = $request->getParsedBody();
 
         $notificationType = new NotificationHub();
@@ -41,4 +45,3 @@ class CreateNotificationController extends AbstractCreateController
         return $notificationType;
     }
 }
-

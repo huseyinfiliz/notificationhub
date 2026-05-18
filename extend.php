@@ -20,8 +20,12 @@ return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
         ->css(__DIR__ . '/resources/less/forum.less')
-        ->content(function (\Flarum\Frontend\Document $document) {
-            $document->payload['notificationTypes']['customNotification'] = 'Custom Notification';
+->content(function (\Flarum\Frontend\Document $document, \Psr\Http\Message\ServerRequestInterface $request) {
+            $actor = \Flarum\Http\RequestUtil::getActor($request);
+            
+            if ($actor->can('huseyinfiliz-notificationhub.send-all')) {
+                $document->payload['notificationTypes']['customNotification'] = 'Custom Notification';
+            }
         }),
 
     (new Extend\Frontend('admin'))

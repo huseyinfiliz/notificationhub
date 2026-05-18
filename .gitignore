@@ -1,0 +1,12 @@
+/vendor
+node_modules
+composer.lock
+composer.phar
+.phpunit.result.cache
+/tests/integration/tmp
+
+.DS_Store
+Thumbs.db
+.vagrant
+.idea
+.vscode

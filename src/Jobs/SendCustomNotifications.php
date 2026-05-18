@@ -4,6 +4,7 @@ namespace huseyinfiliz\notificationhub\Jobs;
 
 use Flarum\User\User;
 use Flarum\Notification\NotificationSyncer;
+use Flarum\Group\Group;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
@@ -67,14 +68,13 @@ class SendCustomNotifications implements ShouldQueue
             $userQuery->whereIn('id', $userIdsArray);
         }
 
-
-        $userQuery->chunk(20, function ($users) use ($notificationSyncer, &$recipientCount, $fromUser) {
+        $userQuery->chunk(20, function ($users) use ($notificationSyncer, &$recipientCount, $fromUser, $notificationHub) {
             foreach ($users as $user) {
                 $blueprint = new CustomNotificationBlueprint(
                     $this->messageText,
                     $fromUser,
                     'custom_admin_notification',
-                    $this->subjectId,
+                    $notificationHub, 
                     $this->url,
                     $this->icon
                 );
@@ -82,7 +82,6 @@ class SendCustomNotifications implements ShouldQueue
                 $recipientCount++;
             }
         });
-
 
         if ($recipientCount === 0) {
             return;

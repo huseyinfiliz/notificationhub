@@ -9,11 +9,9 @@ use huseyinfiliz\notificationhub\Model\NotificationHub;
 
 class CustomNotificationBlueprint implements BlueprintInterface
 {
-
     protected string $message;
     protected ?User $fromUser;
     protected string $notificationType;
-    protected int $subjectId;
     protected string $url;
     protected string $icon;
 
@@ -23,17 +21,16 @@ class CustomNotificationBlueprint implements BlueprintInterface
         string $message,
         ?User $fromUser = null,
         string $notificationType = 'default',
-        int $subjectId = null,
+        NotificationHub $notificationhub,
         string $url = '#',
         string $icon = 'fas fa-bell'
     ) {
         $this->message = $message;
         $this->fromUser = $fromUser;
         $this->notificationType = $notificationType;
-        $this->subjectId = $subjectId;
+        $this->notificationhub = $notificationhub;
         $this->url = $url;
         $this->icon = $icon;
-        $this->notificationhub = NotificationHub::find($this->subjectId);
     }
 
     public function getFromUser()
@@ -48,8 +45,7 @@ class CustomNotificationBlueprint implements BlueprintInterface
 
     public function getData()
     {
-        $notificationHub = $this->notificationhub;
-        $excerptText = $notificationHub ? $notificationHub->excerpt_key : null;
+        $excerptText = $this->notificationhub ? $this->notificationhub->excerpt_key : null;
 
         return [
             'message' => $this->message,

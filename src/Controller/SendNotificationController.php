@@ -107,8 +107,7 @@ class SendNotificationController implements RequestHandlerInterface
             $userQuery->whereIn('id', $userIdsArray);
         }
 
-
-        $userQuery->chunk(1000, function (Collection $users) use (&$allUserIds, $messageText, $fromUserId, $subjectId, $url, $icon) {
+        $userQuery->chunk(1000, function (Collection $users) use ($messageText, $fromUserId, $subjectId, $url, $icon) {
             $userIdsChunk = $users->pluck('id')->toArray();
 
             $this->queue->push(new SendCustomNotifications(
