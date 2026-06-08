@@ -45,7 +45,6 @@ huseyinfiliz-notificationhub:
       preview_title: "Notification Preview"
       preview_message_placeholder: "Notification message.."
 
-
     recipient_kinds:
       user: "User"
       group: "Group"
@@ -55,3 +54,5 @@ huseyinfiliz-notificationhub:
     user_ids_required: "User IDs are required."
     subject_id_required: "Notification Type is required."
     no_valid_recipients: "No valid recipients were found."
+    name_required: "The notification type name is required."
+    invalid_url: "Invalid URL protocol detected."

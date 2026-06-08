@@ -4,15 +4,12 @@ namespace huseyinfiliz\notificationhub\Jobs;
 
 use Flarum\User\User;
 use Flarum\Notification\NotificationSyncer;
-use Flarum\Group\Group;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use huseyinfiliz\notificationhub\Notification\CustomNotificationBlueprint;
 use huseyinfiliz\notificationhub\Model\NotificationHub;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Arr;
 
 class SendCustomNotifications implements ShouldQueue
 {
@@ -44,31 +41,13 @@ class SendCustomNotifications implements ShouldQueue
             return;
         }
 
-        $recipientCount = 0;
-        $groupIds = $this->selectionCriteria['groupIds'];
-        $userIds = $this->selectionCriteria['userIds'];
-        $hasMemberGroup = $this->selectionCriteria['hasMemberGroup'];
+        $userIds = $this->selectionCriteria['userIds'] ?? [];
 
-        $userQuery = User::query();
-
-        if ($groupIds) {
-            $groupIdsArray = $groupIds;
-
-            if ($hasMemberGroup) {
-            }
-            else if (!in_array(Group::MEMBER_ID, $groupIds)) {
-                $userQuery->whereHas('groups', function (Builder $query) use ($groupIdsArray) {
-                    $query->whereIn('id', $groupIdsArray);
-                });
-            }
+        if (empty($userIds)) {
+            return;
         }
 
-        if ($userIds) {
-            $userIdsArray = $userIds;
-            $userQuery->whereIn('id', $userIdsArray);
-        }
-
-        $userQuery->chunk(20, function ($users) use ($notificationSyncer, &$recipientCount, $fromUser, $notificationHub) {
+        User::whereIn('id', $userIds)->chunk(100, function ($users) use ($notificationSyncer, $fromUser, $notificationHub) {
             foreach ($users as $user) {
                 $blueprint = new CustomNotificationBlueprint(
                     $this->messageText,
@@ -79,12 +58,7 @@ class SendCustomNotifications implements ShouldQueue
                     $this->icon
                 );
                 $notificationSyncer->sync($blueprint, [$user]);
-                $recipientCount++;
             }
         });
-
-        if ($recipientCount === 0) {
-            return;
-        }
     }
 }
