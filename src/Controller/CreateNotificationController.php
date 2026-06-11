@@ -2,7 +2,6 @@
 
 namespace huseyinfiliz\notificationhub\Controller;
 
- compartments;
 use Flarum\Api\Controller\AbstractCreateController;
 use Flarum\Http\RequestUtil;
 use huseyinfiliz\notificationhub\Model\NotificationHub;
@@ -34,12 +33,31 @@ class CreateNotificationController extends AbstractCreateController
         $data = $request->getParsedBody();
         $attributes = Arr::get($data, 'data.attributes', []);
 
-        if (empty(Arr::get($attributes, 'name'))) {
+        $name = trim((string) Arr::get($attributes, 'name'));
+        if (empty($name)) {
             throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_required')]]);
         }
 
+        if (mb_strlen($name, 'UTF-8') > 255) {
+            throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_too_long')]]);
+        }
+
+        $url = trim((string) Arr::get($attributes, 'default_url'));
+        if ($url !== '') {
+            // Protocol-relative (//) URL'leri engelleyen nihai regex
+            $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
+            
+            if (!$isValidUrl) {
+                throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
+            }
+
+            if (mb_strlen($url, 'UTF-8') > 2048) {
+                throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
+            }
+        }
+
         $notificationType = new NotificationHub();
-        $notificationType->name = Arr::get($attributes, 'name');
+        $notificationType->name = $name;
         $notificationType->excerpt_key = Arr::get($attributes, 'excerpt_key');
         $notificationType->default_icon = Arr::get($attributes, 'default_icon');
         $notificationType->default_message_key = Arr::get($attributes, 'default_message_key');
@@ -48,7 +66,7 @@ class CreateNotificationController extends AbstractCreateController
         $notificationType->sort_order = (int) Arr::get($attributes, 'sort_order', 0);
         $notificationType->permission = Arr::get($attributes, 'permission');
         $notificationType->color = Arr::get($attributes, 'color');
-        $notificationType->default_url = Arr::get($attributes, 'default_url');
+        $notificationType->default_url = $url !== '' ? $url : null;
         $notificationType->default_recipients = Arr::get($attributes, 'default_recipients');
 
         $notificationType->save();

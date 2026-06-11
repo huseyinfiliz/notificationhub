@@ -39,11 +39,32 @@ class UpdateNotificationController extends AbstractShowController
         $data = $request->getParsedBody();
         $attributes = Arr::get($data, 'data.attributes', []);
 
-        if (Arr::has($attributes, 'default_url')) {
-            $url = Arr::get($attributes, 'default_url');
-            if ($url && preg_match('/^\s*javascript:/i', $url)) {
-                throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url')]]);
+        if (Arr::has($attributes, 'name')) {
+            $name = trim((string) Arr::get($attributes, 'name'));
+            
+            if (empty($name)) {
+                throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_required')]]);
             }
+
+            if (mb_strlen($name, 'UTF-8') > 255) {
+                throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_too_long')]]);
+            }
+            $attributes['name'] = $name;
+        }
+
+        if (Arr::has($attributes, 'default_url')) {
+            $url = trim((string) Arr::get($attributes, 'default_url'));
+            if ($url !== '') {
+                $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
+                
+                if (!$isValidUrl) {
+                    throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
+                }
+                if (mb_strlen($url, 'UTF-8') > 2048) {
+                    throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
+                }
+            }
+            $attributes['default_url'] = $url !== '' ? $url : null;
         }
 
         if (Arr::has($attributes, 'is_active')) {

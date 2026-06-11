@@ -6,7 +6,6 @@ use Flarum\Foundation\ValidationException;
 use Flarum\Http\RequestUtil;
 use Flarum\User\UserRepository;
 use Flarum\User\User;
-use Flarum\Notification\NotificationSyncer;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
@@ -24,7 +23,6 @@ class SendNotificationController implements RequestHandlerInterface
 {
     public function __construct(
         protected UserRepository $users,
-        protected NotificationSyncer $notificationSyncer,
         protected Queue $queue,
         protected Translator $translator
     ) {}
@@ -41,14 +39,18 @@ class SendNotificationController implements RequestHandlerInterface
 
         $actor->assertCan(count($groupIds) > 0 ? 'huseyinfiliz-notificationhub.send-all' : 'huseyinfiliz-notificationhub.send-user');
 
-        $messageText = (string)Arr::get($data, 'message');
+        $messageText = trim((string) Arr::get($data, 'message'));
         $fromUserId = Arr::get($data, 'fromUserId');
         $subjectId = Arr::get($data, 'subjectId');
-        $url = (string)Arr::get($data, 'url', '#');
-        $icon = (string)Arr::get($data, 'icon', 'fas fa-bell');
+        $url = trim((string) Arr::get($data, 'url', '#'));
+        $icon = (string) Arr::get($data, 'icon', 'fas fa-bell');
 
         if (!$messageText) {
             throw new ValidationException(['message' => [$this->translator->trans('huseyinfiliz-notificationhub.api.message_required')]]);
+        }
+
+        if (mb_strlen($messageText, 'UTF-8') > 5000) {
+            throw new ValidationException(['message' => [$this->translator->trans('huseyinfiliz-notificationhub.api.message_too_long')]]);
         }
 
         if (empty($userIds) && empty($groupIds)) {
@@ -58,8 +60,16 @@ class SendNotificationController implements RequestHandlerInterface
             throw new ValidationException(['subjectId' => [$this->translator->trans('huseyinfiliz-notificationhub.api.subject_id_required')]]);
         }
 
-        if ($url && preg_match('/^\s*javascript:/i', $url)) {
-            throw new ValidationException(['url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url')]]);
+        if ($url !== '' && $url !== '#') {
+            // Protocol-relative (//) URL'leri engelleyen nihai regex
+            $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
+            
+            if (!$isValidUrl) {
+                throw new ValidationException(['url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
+            }
+            if (mb_strlen($url, 'UTF-8') > 2048) {
+                throw new ValidationException(['url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
+            }
         }
 
         if (!$actor->isAdmin() || !$fromUserId) {
