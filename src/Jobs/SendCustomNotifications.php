@@ -17,12 +17,12 @@ class SendCustomNotifications implements ShouldQueue
 
     protected array $selectionCriteria;
     protected string $messageText;
-    protected int|null $fromUserId;
+    protected ?int $fromUserId;
     protected int $subjectId;
     protected string $url;
     protected string $icon;
 
-    public function __construct(array $selectionCriteria, string $messageText, int|null $fromUserId, int $subjectId, string $url, string $icon)
+    public function __construct(array $selectionCriteria, string $messageText, ?int $fromUserId, int $subjectId, string $url, string $icon)
     {
         $this->selectionCriteria = $selectionCriteria;
         $this->messageText = $messageText;
@@ -48,17 +48,15 @@ class SendCustomNotifications implements ShouldQueue
         }
 
         User::whereIn('id', $userIds)->chunk(100, function ($users) use ($notificationSyncer, $fromUser, $notificationHub) {
-            foreach ($users as $user) {
-                $blueprint = new CustomNotificationBlueprint(
-                    $this->messageText,
-                    $fromUser,
-                    'custom_admin_notification',
-                    $notificationHub, 
-                    $this->url,
-                    $this->icon
-                );
-                $notificationSyncer->sync($blueprint, [$user]);
-            }
+            $blueprint = new CustomNotificationBlueprint(
+                $this->messageText,
+                $notificationHub,
+                $fromUser,
+                'custom_admin_notification',
+                $this->url,
+                $this->icon
+            );
+            $notificationSyncer->sync($blueprint, $users->all());
         });
     }
 }

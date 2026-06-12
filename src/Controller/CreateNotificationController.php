@@ -11,17 +11,16 @@ use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
 use Illuminate\Support\Arr;
 use Flarum\Foundation\ValidationException;
 use Illuminate\Contracts\Translation\Translator;
+use huseyinfiliz\notificationhub\Utils\UrlValidator;
 
 class CreateNotificationController extends AbstractCreateController
 {
     public $serializer = NotificationTypeSerializer::class;
 
-    protected $notificationHub;
     protected $translator;
 
-    public function __construct(NotificationHub $notificationHub, Translator $translator)
+    public function __construct(Translator $translator)
     {
-        $this->notificationHub = $notificationHub;
         $this->translator = $translator;
     }
 
@@ -42,31 +41,44 @@ class CreateNotificationController extends AbstractCreateController
             throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_too_long')]]);
         }
 
-        $url = trim((string) Arr::get($attributes, 'default_url'));
-        if ($url !== '') {
-            // Protocol-relative (//) URL'leri engelleyen nihai regex
-            $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
-            
-            if (!$isValidUrl) {
-                throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
-            }
+        $url = UrlValidator::validate((string) Arr::get($attributes, 'default_url'), $this->translator, 'default_url');
 
-            if (mb_strlen($url, 'UTF-8') > 2048) {
-                throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
-            }
+        $sortOrder = Arr::get($attributes, 'sort_order', 0);
+        if (!is_numeric($sortOrder) || (int) $sortOrder < 0) {
+            throw new ValidationException(['sort_order' => [$this->translator->trans('huseyinfiliz-notificationhub.api.sort_order_invalid')]]);
+        }
+
+        $excerptKey = (string) Arr::get($attributes, 'excerpt_key', '');
+        if (mb_strlen($excerptKey, 'UTF-8') > 255) {
+            throw new ValidationException(['excerpt_key' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
+        $defaultIcon = (string) Arr::get($attributes, 'default_icon', '');
+        if (mb_strlen($defaultIcon, 'UTF-8') > 255) {
+            throw new ValidationException(['default_icon' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
+        $defaultMessageKey = (string) Arr::get($attributes, 'default_message_key', '');
+        if (mb_strlen($defaultMessageKey, 'UTF-8') > 500) {
+            throw new ValidationException(['default_message_key' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
+        $description = (string) Arr::get($attributes, 'description', '');
+        if (mb_strlen($description, 'UTF-8') > 1000) {
+            throw new ValidationException(['description' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
         }
 
         $notificationType = new NotificationHub();
         $notificationType->name = $name;
-        $notificationType->excerpt_key = Arr::get($attributes, 'excerpt_key');
-        $notificationType->default_icon = Arr::get($attributes, 'default_icon');
-        $notificationType->default_message_key = Arr::get($attributes, 'default_message_key');
-        $notificationType->description = Arr::get($attributes, 'description');
+        $notificationType->excerpt_key = $excerptKey !== '' ? $excerptKey : null;
+        $notificationType->default_icon = $defaultIcon !== '' ? $defaultIcon : null;
+        $notificationType->default_message_key = $defaultMessageKey !== '' ? $defaultMessageKey : null;
+        $notificationType->description = $description !== '' ? $description : null;
         $notificationType->is_active = (bool) Arr::get($attributes, 'is_active', true);
-        $notificationType->sort_order = (int) Arr::get($attributes, 'sort_order', 0);
+        $notificationType->sort_order = (int) $sortOrder;
         $notificationType->permission = Arr::get($attributes, 'permission');
         $notificationType->color = Arr::get($attributes, 'color');
-        $notificationType->default_url = $url !== '' ? $url : null;
+        $notificationType->default_url = $url;
         $notificationType->default_recipients = Arr::get($attributes, 'default_recipients');
 
         $notificationType->save();

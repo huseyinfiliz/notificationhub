@@ -1,12 +1,14 @@
 import app from 'flarum/admin/app';
 import SettingsPage from './Pages/SettingsPage';
+import { Extend } from 'flarum/common/extenders';
+import NotificationType from '../forum/models/NotificationType';
 
 app.initializers.add('huseyinfiliz-notificationhub', () => {
+    app.store.models['notification-types'] = NotificationType;
+
     app.extensionData
         .for('huseyinfiliz-notificationhub')
-        .registerPage(
-            SettingsPage
-        )
+        .registerPage(SettingsPage)
         .registerPermission({
             icon: 'fas fa-bell',
             label: app.translator.trans('huseyinfiliz-notificationhub.admin.permissions.send_all'),

@@ -19,16 +19,16 @@ class CustomNotificationBlueprint implements BlueprintInterface
 
     public function __construct(
         string $message,
+        NotificationHub $notificationhub,
         ?User $fromUser = null,
         string $notificationType = 'default',
-        NotificationHub $notificationhub,
         string $url = '#',
         string $icon = 'fas fa-bell'
     ) {
         $this->message = $message;
+        $this->notificationhub = $notificationhub;
         $this->fromUser = $fromUser;
         $this->notificationType = $notificationType;
-        $this->notificationhub = $notificationhub;
         $this->url = $url;
         $this->icon = $icon;
     }

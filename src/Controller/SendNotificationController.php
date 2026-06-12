@@ -18,6 +18,7 @@ use huseyinfiliz\notificationhub\Model\NotificationHub;
 use huseyinfiliz\notificationhub\Jobs\SendCustomNotifications;
 use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Support\Collection;
+use huseyinfiliz\notificationhub\Utils\UrlValidator;
 
 class SendNotificationController implements RequestHandlerInterface
 {
@@ -42,7 +43,7 @@ class SendNotificationController implements RequestHandlerInterface
         $messageText = trim((string) Arr::get($data, 'message'));
         $fromUserId = Arr::get($data, 'fromUserId');
         $subjectId = Arr::get($data, 'subjectId');
-        $url = trim((string) Arr::get($data, 'url', '#'));
+        $url = (string) Arr::get($data, 'url', '#');
         $icon = (string) Arr::get($data, 'icon', 'fas fa-bell');
 
         if (!$messageText) {
@@ -60,17 +61,7 @@ class SendNotificationController implements RequestHandlerInterface
             throw new ValidationException(['subjectId' => [$this->translator->trans('huseyinfiliz-notificationhub.api.subject_id_required')]]);
         }
 
-        if ($url !== '' && $url !== '#') {
-            // Protocol-relative (//) URL'leri engelleyen nihai regex
-            $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
-            
-            if (!$isValidUrl) {
-                throw new ValidationException(['url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
-            }
-            if (mb_strlen($url, 'UTF-8') > 2048) {
-                throw new ValidationException(['url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
-            }
-        }
+        $url = UrlValidator::validate($url, $this->translator, 'url') ?? '#';
 
         if (!$actor->isAdmin() || !$fromUserId) {
             $fromUserId = $actor->id;

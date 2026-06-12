@@ -15,15 +15,15 @@
     },
     "authors": [
         {
-            "name": "Huseyin Filiz",
-            "homepage": "https://huseyinfiliz.com.tr/sosyal",
+            "name": "Hüseyin Filiz",
+            "homepage": "https://huseyinfiliz.com",
             "email": "mysuperuser01@gmail.com",
             "role": "Developer"
         }
     ],
     "support": {
         "source": "https://github.com/huseyinfiliz/notificationhub",
-        "forum": "https://discuss.flarum.org/d/32824"
+        "forum": "https://discuss.flarum.org/d/37013-notification-hub-extension"
     },
     "autoload": {
         "psr-4": {

@@ -11,17 +11,16 @@ use Flarum\Http\RequestUtil;
 use Illuminate\Support\Arr;
 use Flarum\Foundation\ValidationException;
 use Illuminate\Contracts\Translation\Translator;
+use huseyinfiliz\notificationhub\Utils\UrlValidator;
 
 class UpdateNotificationController extends AbstractShowController
 {
     public $serializer = NotificationTypeSerializer::class;
 
-    protected $notificationHub;
     protected $translator;
 
-    public function __construct(NotificationHub $notificationHub, Translator $translator)
+    public function __construct(Translator $translator)
     {
-        $this->notificationHub = $notificationHub;
         $this->translator = $translator;
     }
 
@@ -34,47 +33,73 @@ class UpdateNotificationController extends AbstractShowController
         }
 
         $id = Arr::get($request->getAttribute('routeParameters'), 'id');
-        $notificationType = $this->notificationHub->findOrFail($id);
+        $notificationType = NotificationHub::findOrFail($id);
 
         $data = $request->getParsedBody();
         $attributes = Arr::get($data, 'data.attributes', []);
 
+        $dirty = [];
+
         if (Arr::has($attributes, 'name')) {
             $name = trim((string) Arr::get($attributes, 'name'));
-            
             if (empty($name)) {
                 throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_required')]]);
             }
-
             if (mb_strlen($name, 'UTF-8') > 255) {
                 throw new ValidationException(['name' => [$this->translator->trans('huseyinfiliz-notificationhub.api.name_too_long')]]);
             }
-            $attributes['name'] = $name;
+            $dirty['name'] = $name;
         }
 
         if (Arr::has($attributes, 'default_url')) {
-            $url = trim((string) Arr::get($attributes, 'default_url'));
-            if ($url !== '') {
-                $isValidUrl = preg_match('/^(https?:\/\/|\/(?!\/)|mailto:|tel:)/i', $url);
-                
-                if (!$isValidUrl) {
-                    throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_url_scheme')]]);
-                }
-                if (mb_strlen($url, 'UTF-8') > 2048) {
-                    throw new ValidationException(['default_url' => [$this->translator->trans('huseyinfiliz-notificationhub.api.url_too_long')]]);
-                }
-            }
-            $attributes['default_url'] = $url !== '' ? $url : null;
+            $dirty['default_url'] = UrlValidator::validate((string) Arr::get($attributes, 'default_url'), $this->translator, 'default_url');
         }
 
         if (Arr::has($attributes, 'is_active')) {
-            $attributes['is_active'] = (bool) Arr::get($attributes, 'is_active');
-        }
-        if (Arr::has($attributes, 'sort_order')) {
-            $attributes['sort_order'] = (int) Arr::get($attributes, 'sort_order');
+            $dirty['is_active'] = (bool) Arr::get($attributes, 'is_active');
         }
 
-        $notificationType->update($attributes);
+        if (Arr::has($attributes, 'sort_order')) {
+            $value = Arr::get($attributes, 'sort_order');
+            if (!is_numeric($value) || (int) $value < 0) {
+                throw new ValidationException(['sort_order' => [$this->translator->trans('huseyinfiliz-notificationhub.api.sort_order_invalid')]]);
+            }
+            $dirty['sort_order'] = (int) $value;
+        }
+
+        if (Arr::has($attributes, 'excerpt_key')) {
+            $val = (string) Arr::get($attributes, 'excerpt_key', '');
+            if (mb_strlen($val, 'UTF-8') > 255) {
+                throw new ValidationException(['excerpt_key' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['excerpt_key'] = $val !== '' ? $val : null;
+        }
+
+        if (Arr::has($attributes, 'default_icon')) {
+            $val = (string) Arr::get($attributes, 'default_icon', '');
+            if (mb_strlen($val, 'UTF-8') > 255) {
+                throw new ValidationException(['default_icon' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['default_icon'] = $val !== '' ? $val : null;
+        }
+
+        if (Arr::has($attributes, 'default_message_key')) {
+            $val = (string) Arr::get($attributes, 'default_message_key', '');
+            if (mb_strlen($val, 'UTF-8') > 500) {
+                throw new ValidationException(['default_message_key' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['default_message_key'] = $val !== '' ? $val : null;
+        }
+
+        if (Arr::has($attributes, 'description')) {
+            $val = (string) Arr::get($attributes, 'description', '');
+            if (mb_strlen($val, 'UTF-8') > 1000) {
+                throw new ValidationException(['description' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['description'] = $val !== '' ? $val : null;
+        }
+
+        $notificationType->update($dirty);
 
         return $notificationType;
     }

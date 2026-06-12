@@ -3,7 +3,6 @@
 namespace huseyinfiliz\notificationhub;
 
 use Flarum\Api\Serializer\ForumSerializer;
-use Flarum\Api\Serializer\UserSerializer;
 use Flarum\Extend;
 use huseyinfiliz\notificationhub\Notification\CustomNotificationBlueprint;
 use huseyinfiliz\notificationhub\Controller\SendNotificationController;
@@ -12,21 +11,13 @@ use huseyinfiliz\notificationhub\Controller\CreateNotificationController;
 use huseyinfiliz\notificationhub\Controller\ListNotificationController;
 use huseyinfiliz\notificationhub\Controller\DeleteNotificationController;
 use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
-use huseyinfiliz\notificationhub\Jobs\SendCustomNotifications;
-
+use huseyinfiliz\notificationhub\Content\AddForumPayload;
 
 return [
     (new Extend\Frontend('forum'))
         ->js(__DIR__ . '/js/dist/forum.js')
         ->css(__DIR__ . '/resources/less/forum.less')
-->content(function (\Flarum\Frontend\Document $document, \Psr\Http\Message\ServerRequestInterface $request) {
-            $actor = \Flarum\Http\RequestUtil::getActor($request);
-            
-            if ($actor->can('huseyinfiliz-notificationhub.send-all')) {
-                $document->payload['notificationTypes']['customNotification'] = 'Custom Notification';
-            }
-        }),
+        ->content(AddForumPayload::class),
 
     (new Extend\Frontend('admin'))
         ->js(__DIR__ . '/js/dist/admin.js')
