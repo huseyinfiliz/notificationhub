@@ -46,12 +46,14 @@ class CustomNotificationBlueprint implements BlueprintInterface
     public function getData()
     {
         $excerptText = $this->notificationhub ? $this->notificationhub->excerpt_key : null;
+        $colorText = $this->notificationhub ? $this->notificationhub->color : null;
 
         return [
             'message' => $this->message,
             'excerpt' => $excerptText,
             'url' => $this->url,
             'icon' => $this->icon,
+            'color' => $colorText,
             'unique' => (string) Str::orderedUuid(),
         ];
     }

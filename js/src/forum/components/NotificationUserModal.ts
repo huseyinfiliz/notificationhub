@@ -35,11 +35,12 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
     notificationTypes: NotificationType[] | null = null;
     selectedNotificationType: string = '';
     loadingTypes = false;
+    private lastApiResults: User[] = [];
 
     oninit(vnode: Vnode) {
         super.oninit(vnode);
-
         this.recipients = [];
+        this.lastApiResults = [];
 
         if (this.attrs.user) {
             this.recipients.push(this.attrs.user);
@@ -87,7 +88,20 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
             await app.store.find('notification-types');
             const allTypes = app.store.all<NotificationType>('notification-types');
             const activeTypes = allTypes.filter((item: NotificationType) => item.attribute('is_active'));
-            this.notificationTypes = activeTypes.sort(
+            
+            const userGroups = app.session.user ? (app.session.user.groups() || []).map((g: any) => g.id()) : [];
+            const isAdmin = app.session.user && app.session.user.isAdmin();
+
+            const allowedTypes = activeTypes.filter((item: NotificationType) => {
+                if (isAdmin) return true;
+                const perm = item.attribute('permission');
+                if (!perm) return true;
+                
+                const allowedGroupIds = perm.split(',');
+                return allowedGroupIds.some((id: string) => userGroups.includes(id));
+            });
+
+            this.notificationTypes = allowedTypes.sort(
                 (a: NotificationType, b: NotificationType) =>
                     (a.attribute('sort_order') ?? 0) - (b.attribute('sort_order') ?? 0)
             );
@@ -108,6 +122,34 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         this.notificationUrl = type.attribute('default_url') || '';
         this.notificationIcon = type.attribute('default_icon') || '';
         this.messageText = type.attribute('default_message_key') || '';
+        
+        this.recipients = [];
+        const defaultRecipients = type.attribute('default_recipients');
+        if (defaultRecipients) {
+            const items = defaultRecipients.split(',').map((i: string) => i.trim());
+            items.forEach((item: string) => {
+                const [rType, rId] = item.split(':');
+                if (rType === 'group') {
+                    const group = app.store.getById<Group>('groups', rId);
+                    if (group) this.recipients.push(group);
+                } else if (rType === 'user') {
+                    app.store.find<User>('users', rId).then((user) => {
+                        if (!this.recipients.some(r => r.data.type === 'users' && r.id() === user.id())) {
+                            this.recipients.push(user);
+                            m.redraw();
+                        }
+                    });
+                }
+            });
+        } else {
+            if (this.attrs.user) {
+                this.recipients.push(this.attrs.user);
+            }
+            if (this.attrs.forAll) {
+                const membersGroup = app.store.getById<Group>('groups', Group.MEMBER_ID)!;
+                this.recipients.push(membersGroup);
+            }
+        }
     }
 
     className() {
@@ -141,7 +183,6 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                     group.namePlural(),
                 ]);
         }
-
         return '[unknown]';
     }
 
@@ -152,15 +193,11 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
             case 'groups':
                 return app.translator.trans('huseyinfiliz-notificationhub.forum.recipient_kinds.group');
         }
-
         return '[unknown]';
     }
 
     selectResult(result: Recipient | null) {
-        if (!result) {
-            return;
-        }
-
+        if (!result) return;
         this.recipients.push(result);
         this.filter = '';
         this.searchResults = [];
@@ -168,15 +205,67 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
     }
 
     content() {
+        return m('.Modal-body', m('form.Form', {
+            onsubmit: this.onsubmit.bind(this),
+        }, [
+            this.recipientsField(),
+            this.typeSelectorField(),
+            this.messageField(),
+            this.urlField(),
+            this.previewField(),
+            this.submitButtonField()
+        ]));
+    }
+
+    private recipientsField() {
+        return m('.Form-group', [
+            m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_label')),
+            m('.RecipientsInput.FormControl', {
+                className: this.focused ? 'focus' : '',
+            }, [
+                m('span.RecipientsInput-selected', this.recipients.map((recipient, index) => m('span.RecipientsInput-recipient', {
+                    onclick: () => {
+                        this.recipients.splice(index, 1);
+                        m.redraw();
+                    },
+                    title: this.searchResultKind(recipient),
+                }, this.recipientLabel(recipient)))),
+                m('input.FormControl', {
+                    placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_placeholder'),
+                    value: this.filter,
+                    oninput: (event: InputEvent) => {
+                        this.filter = (event.target as HTMLInputElement).value;
+                        this.performNewSearch();
+                    },
+                    onkeydown: this.navigator.navigate.bind(this.navigator),
+                    onfocus: () => { this.focused = true; },
+                    onblur: () => { this.focused = false; },
+                    disabled: this.sending,
+                }),
+                this.loadingResults ? LoadingIndicator.component({ size: 'small' }) : null,
+                this.searchResults.length ? m('ul.Dropdown-menu', this.searchResults.map(
+                    (result, index) => m('li', {
+                        className: this.searchIndex === index ? 'active' : '',
+                        onclick: () => { this.selectResult(result); },
+                    }, m('button[type=button]', [
+                        m('span.SearchResultKind', this.searchResultKind(result)),
+                        this.recipientLabel(result),
+                    ]))
+                )) : null,
+            ]),
+        ]);
+    }
+
+    private typeSelectorField() {
         const notificationTypeOptions: { [key: string]: string } = {};
-        let notificationTypeSelect: any = "Custom";
+        let selectBody: any = "Custom";
 
         if (this.notificationTypes && this.notificationTypes.length > 0) {
             this.notificationTypes.forEach(type => {
                 notificationTypeOptions[type.id()!] = type.attribute('name');
             });
 
-            notificationTypeSelect = m(Select, {
+            selectBody = m(Select, {
                 options: notificationTypeOptions,
                 value: this.selectedNotificationType,
                 onchange: (value: string) => {
@@ -189,136 +278,94 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 disabled: this.sending,
             });
         } else {
-            notificationTypeSelect = m('p', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.no_notification_types'));
+            selectBody = m('p', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.no_notification_types'));
         }
 
-        return m('.Modal-body', m('form.Form', {
-            onsubmit: this.onsubmit.bind(this),
-        }, [
-            m('.Form-group', [
-                m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_label')),
-                m('.RecipientsInput.FormControl', {
-                    className: this.focused ? 'focus' : '',
-                }, [
-                    m('span.RecipientsInput-selected', this.recipients.map((recipient, index) => m('span.RecipientsInput-recipient', {
-                        onclick: () => {
-                            this.recipients.splice(index, 1);
-                            m.redraw();
-                        },
-                        title: this.searchResultKind(recipient),
-                    }, this.recipientLabel(recipient)))),
-                    m('input.FormControl', {
-                        placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_placeholder'),
-                        value: this.filter,
-                        oninput: (event: InputEvent) => {
-                            this.filter = (event.target as HTMLInputElement).value;
-                            this.performNewSearch();
-                        },
-                        onkeydown: this.navigator.navigate.bind(this.navigator),
-                        onfocus: () => {
-                            this.focused = true;
-                        },
-                        onblur: () => {
-                            this.focused = false;
-                        },
-                        disabled: this.sending,
-                    }),
-                    this.loadingResults ? LoadingIndicator.component({
-                        size: 'small',
-                    }) : null,
-                    this.searchResults.length ? m('ul.Dropdown-menu', this.searchResults.map(
-                        (result, index) => m('li', {
-                            className: this.searchIndex === index ? 'active' : '',
-                            onclick: () => {
-                                this.selectResult(result);
-                            },
-                        }, m('button[type=button]', [
-                            m('span.SearchResultKind', this.searchResultKind(result)),
-                            this.recipientLabel(result),
-                        ]))
-                    )) : null,
-                ]),
-            ]),
-            m('.Form-group', [
-                m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.notification_type_label')),
-                this.loadingTypes
-                    ? m(LoadingIndicator, { size: 'small' })
-                    : notificationTypeSelect,
-            ]),
-            m('.Form-group', [
-                m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.message_label')),
-                m('textarea.FormControl', {
-                    rows: 5,
-                    value: this.messageText,
-                    oninput: (event: InputEvent) => {
-                        this.messageText = (event.target as HTMLInputElement).value;
-                    },
-                    placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder'),
-                    disabled: this.sending,
-                }),
-            ]),
-            m('.Form-group', [
-                m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.url_label')),
-                m('input[type=text].FormControl', {
-                    value: this.notificationUrl,
-                    oninput: (event: InputEvent) => {
-                        this.notificationUrl = (event.target as HTMLInputElement).value;
-                    },
-                    placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.url_placeholder'),
-                    disabled: this.sending,
-                }),
-            ]),
-            m('.Form-group', [
-                m('label',
-                    app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_title')
-                ),
-                m('.NotificationPreview-content',
-                    m('ul.NotificationGroup-content',
-                        m('li',
-                            m('a.Notification.Notification--customNotification', [
-                                m('span.Avatar.Notification-avatar',
-                                    {
-                                        className: 'Avatar Notification-avatar',
-                                        style: app.session.user
-                                            ? {
-                                                'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
-                                                'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null
-                                            }
-                                            : {}
-                                    },
-                                    app.session.user && !app.session.user.avatarUrl()
-                                        ? app.session.user.username()?.charAt(0).toUpperCase()
-                                        : null
+        return m('.Form-group', [
+            m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.notification_type_label')),
+            this.loadingTypes ? m(LoadingIndicator, { size: 'small' }) : selectBody,
+        ]);
+    }
+
+    private messageField() {
+        return m('.Form-group', [
+            m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.message_label')),
+            m('textarea.FormControl', {
+                rows: 5,
+                value: this.messageText,
+                oninput: (event: InputEvent) => {
+                    this.messageText = (event.target as HTMLInputElement).value;
+                },
+                placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder'),
+                disabled: this.sending,
+            }),
+        ]);
+    }
+
+    private urlField() {
+        return m('.Form-group', [
+            m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.url_label')),
+            m('input[type=text].FormControl', {
+                value: this.notificationUrl,
+                oninput: (event: InputEvent) => {
+                    this.notificationUrl = (event.target as HTMLInputElement).value;
+                },
+                placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.url_placeholder'),
+                disabled: this.sending,
+            }),
+        ]);
+    }
+
+    private previewField() {
+        return m('.Form-group', [
+            m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_title')),
+            m('.NotificationPreview-content',
+                m('ul.NotificationGroup-content',
+                    m('li',
+                        m('a.Notification.Notification--customNotification', [
+                            m('span.Avatar.Notification-avatar',
+                                {
+                                    className: 'Avatar Notification-avatar',
+                                    style: app.session.user
+                                        ? {
+                                            'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
+                                            'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null
+                                        }
+                                        : {}
+                                },
+                                app.session.user && !app.session.user.avatarUrl()
+                                    ? app.session.user.username()?.charAt(0).toUpperCase()
+                                    : null
+                            ),
+                            m('i.icon.Notification-icon', { className: this.notificationIcon ? `icon ${this.notificationIcon} Notification-icon` : 'icon fas fa-bell Notification-icon' }),
+                            m('span.Notification-title',
+                                m('span.Notification-content',
+                                    m('div.NotificationPreview-messageText', this.messageText || m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder')))
                                 ),
-                                m('i.icon.Notification-icon', { className: this.notificationIcon ? `icon ${this.notificationIcon} Notification-icon` : 'icon fas fa-bell Notification-icon' }),
-                                m('span.Notification-title',
-                                    m('span.Notification-content',
-                                        m('div.NotificationPreview-messageText', this.messageText || m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder')))
-                                    ),
-                                    m('span.Notification-title-spring')
-                                ),
-                                m('div.Notification-excerpt', this.selectedNotificationType ? String(this.notificationTypes?.find(type => type.id() === this.selectedNotificationType)?.attribute('excerpt_key') || '') : "")
-                            ])
-                        )
+                                m('span.Notification-title-spring')
+                            ),
+                            m('div.Notification-excerpt', this.selectedNotificationType ? String(this.notificationTypes?.find(type => type.id() === this.selectedNotificationType)?.attribute('excerpt_key') || '') : "")
+                        ])
                     )
-                ),
-            ]),
-            m('.Form-group', [
-                Button.component({
-                    type: 'submit',
-                    className: 'Button Button--primary SendNotificationModal-send',
-                    loading: this.sending,
-                    disabled: this.recipients.length === 0 || this.messageText === '' || !this.selectedNotificationType,
-                }, app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.submit_button'))
-            ]),
-        ]));
+                )
+            ),
+        ]);
+    }
+
+    private submitButtonField() {
+        return m('.Form-group', [
+            Button.component({
+                type: 'submit',
+                className: 'Button Button--primary SendNotificationModal-send',
+                loading: this.sending,
+                disabled: this.recipients.length === 0 || this.messageText === '' || !this.selectedNotificationType,
+            }, app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.submit_button'))
+        ]);
     }
 
     performNewSearch() {
         this.searchIndex = 0;
-
         const query = this.filter.toLowerCase();
-
         this.buildSearchResults(query);
 
         clearTimeout(this.searchTimeout);
@@ -330,8 +377,9 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 app.store.find('users', {
                     filter: { q: query },
                     page: { limit: 5 }
-                }).then(() => {
+                }).then((results: any) => {
                     this.loadingResults = false;
+                    this.lastApiResults = results || [];
                     this.buildSearchResults(query);
                     m.redraw();
                 });
@@ -349,17 +397,14 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
 
         if (app.forum.huseyinfilizNotificationAll()) {
             app.store.all<Group>('groups').forEach(group => {
-                if (group.id() === Group.GUEST_ID) {
-                    return;
-                }
-
+                if (group.id() === Group.GUEST_ID) return;
                 if (group.nameSingular().toLowerCase().indexOf(query) !== -1 || group.namePlural().toLowerCase().indexOf(query) !== -1) {
                     results.push(group);
                 }
             });
         }
 
-        app.store.all<User>('users').forEach(user => {
+        this.lastApiResults.forEach(user => {
             if (user.username().toLowerCase().indexOf(query) !== -1) {
                 results.push(user);
             }
@@ -405,11 +450,9 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         }).then(
             (response) => {
                 m.redraw();
-
                 const successMessage = app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.notification_sent_message', {
                     recipientsCount: response.recipientsCount,
                 });
-
                 app.alerts.show({ type: 'success' }, successMessage)
                 this.hide();
             },

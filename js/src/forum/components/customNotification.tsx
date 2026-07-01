@@ -16,8 +16,15 @@ export default class CustomNotification extends Notification {
 
   content() {
     const message = this.attrs.notification?.content()?.message;
-
-
     return m('div', message);
+  }
+
+  view(vnode: any) {
+    const view = super.view(vnode);
+    const color = this.attrs.notification?.content()?.color;
+    if (color && view && view.attrs) {
+      view.attrs.style = { ...view.attrs.style, backgroundColor: color };
+    }
+    return view;
   }
 }

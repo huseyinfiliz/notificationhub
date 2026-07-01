@@ -187,3 +187,130 @@
         }
     }
 }
+
+.NotificationTypeModal {
+  .permission-help {
+    margin-bottom: 8px;
+    font-size: 12px;
+    color: #666;
+  }
+
+  .permission-checkbox {
+    display: inline-block;
+    margin-right: 15px;
+  }
+
+  .RecipientsInput {
+    position: relative;
+    height: auto;
+    min-height: 36px;
+    padding: 4px 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+
+    .RecipientsInput-selected {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .RecipientsInput-recipient {
+      background: #e7ecf3;
+      color: #333;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      
+      &:hover {
+        background: #d4dee9;
+        text-decoration: line-through;
+      }
+    }
+
+    input {
+      border: none;
+      padding: 0;
+      margin: 0;
+      height: 28px;
+      flex: 1;
+      min-width: 150px;
+      background: transparent;
+      box-shadow: none;
+
+      &:focus {
+        box-shadow: none;
+        outline: none;
+      }
+    }
+
+    .search-dropdown {
+      display: block !important;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      z-index: 1050;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.175);
+      max-height: 200px;
+      overflow-y: auto;
+      margin: 0;
+      padding: 5px 0;
+      list-style: none;
+
+      li {
+        padding: 0;
+        margin: 0;
+
+        button {
+          display: block;
+          width: 100%;
+          padding: 6px 12px;
+          clear: both;
+          font-weight: 400;
+          color: #333;
+          text-align: left;
+          white-space: nowrap;
+          background: none;
+          border: none;
+          border-radius: 0;
+          cursor: pointer;
+
+          &:hover {
+            color: #fff;
+            text-decoration: none;
+            background-color: #4d90fe;
+
+            .SearchResultKind {
+              color: #eee;
+            }
+          }
+
+          .SearchResultKind {
+            float: right;
+            font-size: 10px;
+            color: #999;
+            text-transform: uppercase;
+            margin-top: 2px;
+          }
+        }
+
+        &.active button {
+          color: #fff;
+          background-color: #4d90fe;
+          
+          .SearchResultKind {
+            color: #eee;
+          }
+        }
+      }
+    }
+  }
+}

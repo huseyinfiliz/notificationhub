@@ -2,9 +2,17 @@ huseyinfiliz-notificationhub:
   admin:
     title:
       page_title: "Notification Types"
+
     permissions:
       send_all: "Send notifications to all users"
       send_user: "Send notifications to individual users"
+
+    recipient_kinds:
+      user: => huseyinfiliz-notificationhub.forum.recipient_kinds.user
+      group: => huseyinfiliz-notificationhub.forum.recipient_kinds.group
+
+    modal_notification:
+      recipients_placeholder: => huseyinfiliz-notificationhub.forum.modal_notification.recipients_placeholder
 
     settings:
       add_button: "Add Notification Type"
@@ -23,6 +31,7 @@ huseyinfiliz-notificationhub:
         default_recipients: "Default Recipients"
         sort_order: "Sort Order"
         active: "Active"
+        permission_help: "Select member groups authorized to send this notification. If left empty, all authorized moderators/admins can send it."
       save: "Save"
       edit_notification_type: "Edit Notification Type"
       add_notification_type: "Add Notification Type"
@@ -31,6 +40,7 @@ huseyinfiliz-notificationhub:
     links:
       notification_individual: "Send Notification"
       notification_all: "Send Notification"
+
     modal_notification:
       title_text: "Send Notification"
       recipients_label: "Recipients"

@@ -61,6 +61,14 @@ class SendNotificationController implements RequestHandlerInterface
             throw new ValidationException(['subjectId' => [$this->translator->trans('huseyinfiliz-notificationhub.api.subject_id_required')]]);
         }
 
+        if (!$actor->can('huseyinfiliz-notificationhub.send-all') && count($userIds) > 1) {
+            throw new ValidationException(['userIds' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
+        if (mb_strlen($icon, 'UTF-8') > 100) {
+            throw new ValidationException(['icon' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
         $url = UrlValidator::validate($url, $this->translator, 'url') ?? '#';
 
         if (!$actor->isAdmin() || !$fromUserId) {
@@ -71,6 +79,15 @@ class SendNotificationController implements RequestHandlerInterface
         $notificationHub = NotificationHub::find($subjectId);
         if (!$notificationHub) {
             throw new ValidationException(['subjectId' => [$this->translator->trans('huseyinfiliz-notificationhub.api.subject_id_required')]]);
+        }
+
+        if ($notificationHub->permission && !$actor->isAdmin()) {
+            $allowedGroups = explode(',', $notificationHub->permission);
+            $actorGroups = $actor->groups->pluck('id')->toArray();
+            
+            if (empty(array_intersect($allowedGroups, $actorGroups))) {
+                throw new \Flarum\User\Exception\PermissionDeniedException;
+            }
         }
 
         $userQuery = $this->users->query();
