@@ -1,5 +1,6 @@
 import app from 'flarum/forum/app';
 import Notification from 'flarum/forum/components/Notification';
+import { getContrastTextColor } from '../../common/utils/color';
 
 export default class CustomNotification extends Notification {
   icon() {
@@ -23,7 +24,12 @@ export default class CustomNotification extends Notification {
     const view = super.view(vnode);
     const color = this.attrs.notification?.content()?.color;
     if (color && view && view.attrs) {
-      view.attrs.style = { ...view.attrs.style, backgroundColor: color };
+      const textColor = getContrastTextColor(color);
+      view.attrs.style = {
+        ...view.attrs.style,
+        backgroundColor: color,
+        ...(textColor ? { '--notificationhub-text-color': textColor } : {}),
+      };
     }
     return view;
   }

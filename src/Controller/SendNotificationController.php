@@ -62,7 +62,7 @@ class SendNotificationController implements RequestHandlerInterface
         }
 
         if (!$actor->can('huseyinfiliz-notificationhub.send-all') && count($userIds) > 1) {
-            throw new ValidationException(['userIds' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            throw new ValidationException(['userIds' => [$this->translator->trans('huseyinfiliz-notificationhub.api.multiple_recipients_not_allowed')]]);
         }
 
         if (mb_strlen($icon, 'UTF-8') > 100) {

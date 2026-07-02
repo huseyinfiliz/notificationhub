@@ -1,0 +1,142 @@
+.RecipientPicker {
+    &.RecipientsInput {
+        padding-top: 0;
+        padding-bottom: 0;
+        height: auto;
+        min-height: 36px;
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+        padding: 4px 8px;
+
+        input {
+            display: inline;
+            outline: none;
+            border: 0 !important;
+            padding: 0;
+            flex: 1;
+            min-width: 150px;
+            height: 28px;
+            background: transparent !important;
+            box-shadow: none;
+
+            &:focus {
+                box-shadow: none;
+                outline: none;
+            }
+        }
+
+        .LoadingIndicator-container {
+            height: 34px;
+            width: 34px;
+            position: absolute;
+            top: 0;
+            right: 0;
+            pointer-events: none;
+        }
+
+        .Dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            display: block;
+            z-index: 1050;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 2px 0 0;
+            padding: 5px 0;
+            list-style: none;
+            background: var(--body-bg);
+            border: 1px solid var(--control-bg);
+            border-radius: var(--border-radius);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175);
+
+            li {
+                padding: 0;
+                margin: 0;
+
+                button {
+                    display: block;
+                    width: 100%;
+                    padding: 6px 12px;
+                    clear: both;
+                    font-weight: 400;
+                    color: var(--text-color);
+                    text-align: left;
+                    white-space: nowrap;
+                    background: none;
+                    border: none;
+                    border-radius: 0;
+                    cursor: pointer;
+
+                    &:hover {
+                        color: var(--control-bg);
+                        text-decoration: none;
+                        background-color: var(--primary-color);
+
+                        .SearchResultKind {
+                            color: inherit;
+                        }
+                    }
+
+                    .SearchResultKind {
+                        float: right;
+                        font-size: 10px;
+                        color: var(--muted-color);
+                        text-transform: uppercase;
+                        margin-top: 2px;
+                    }
+                }
+
+                &.active button {
+                    color: var(--control-bg);
+                    background-color: var(--primary-color);
+
+                    .SearchResultKind {
+                        color: inherit;
+                    }
+                }
+            }
+        }
+    }
+
+    .RecipientsInput-selected {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .RecipientsInput-recipient {
+        cursor: pointer;
+        margin-right: 0;
+
+        &:hover {
+            text-decoration: line-through;
+        }
+    }
+
+    .RecipientLabel {
+        font-size: 85%;
+        font-weight: 600;
+        display: inline-block;
+        padding: 0.1em 0.5em;
+        border-radius: var(--border-radius);
+        background: var(--control-bg);
+        color: var(--control-color);
+        text-transform: none;
+
+        &.colored {
+            // text color is set dynamically per-group via inline style (see getContrastTextColor)
+        }
+    }
+
+    .SearchResultKind {
+        display: inline-block;
+        min-width: 5em;
+        color: var(--muted-color);
+        font-style: italic;
+    }
+}

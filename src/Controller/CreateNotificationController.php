@@ -68,6 +68,24 @@ class CreateNotificationController extends AbstractCreateController
             throw new ValidationException(['description' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
         }
 
+        $permission = (string) Arr::get($attributes, 'permission', '');
+        if (mb_strlen($permission, 'UTF-8') > 255) {
+            throw new ValidationException(['permission' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
+        $color = (string) Arr::get($attributes, 'color', '');
+        if (mb_strlen($color, 'UTF-8') > 32) {
+            throw new ValidationException(['color' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+        if ($color !== '' && !preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $color)) {
+            throw new ValidationException(['color' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_color')]]);
+        }
+
+        $defaultRecipients = (string) Arr::get($attributes, 'default_recipients', '');
+        if (mb_strlen($defaultRecipients, 'UTF-8') > 5000) {
+            throw new ValidationException(['default_recipients' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+        }
+
         $notificationType = new NotificationHub();
         $notificationType->name = $name;
         $notificationType->excerpt_key = $excerptKey !== '' ? $excerptKey : null;
@@ -76,10 +94,10 @@ class CreateNotificationController extends AbstractCreateController
         $notificationType->description = $description !== '' ? $description : null;
         $notificationType->is_active = (bool) Arr::get($attributes, 'is_active', true);
         $notificationType->sort_order = (int) $sortOrder;
-        $notificationType->permission = Arr::get($attributes, 'permission');
-        $notificationType->color = Arr::get($attributes, 'color');
+        $notificationType->permission = $permission !== '' ? $permission : null;
+        $notificationType->color = $color !== '' ? $color : null;
         $notificationType->default_url = $url;
-        $notificationType->default_recipients = Arr::get($attributes, 'default_recipients');
+        $notificationType->default_recipients = $defaultRecipients !== '' ? $defaultRecipients : null;
 
         $notificationType->save();
 

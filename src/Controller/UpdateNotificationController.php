@@ -99,6 +99,33 @@ class UpdateNotificationController extends AbstractShowController
             $dirty['description'] = $val !== '' ? $val : null;
         }
 
+        if (Arr::has($attributes, 'permission')) {
+            $val = (string) Arr::get($attributes, 'permission', '');
+            if (mb_strlen($val, 'UTF-8') > 255) {
+                throw new ValidationException(['permission' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['permission'] = $val !== '' ? $val : null;
+        }
+
+        if (Arr::has($attributes, 'color')) {
+            $val = (string) Arr::get($attributes, 'color', '');
+            if (mb_strlen($val, 'UTF-8') > 32) {
+                throw new ValidationException(['color' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            if ($val !== '' && !preg_match('/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/', $val)) {
+                throw new ValidationException(['color' => [$this->translator->trans('huseyinfiliz-notificationhub.api.invalid_color')]]);
+            }
+            $dirty['color'] = $val !== '' ? $val : null;
+        }
+
+        if (Arr::has($attributes, 'default_recipients')) {
+            $val = (string) Arr::get($attributes, 'default_recipients', '');
+            if (mb_strlen($val, 'UTF-8') > 5000) {
+                throw new ValidationException(['default_recipients' => [$this->translator->trans('huseyinfiliz-notificationhub.api.field_too_long')]]);
+            }
+            $dirty['default_recipients'] = $val !== '' ? $val : null;
+        }
+
         $notificationType->update($dirty);
 
         return $notificationType;

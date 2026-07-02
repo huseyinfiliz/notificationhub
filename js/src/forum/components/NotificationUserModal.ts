@@ -5,18 +5,16 @@ import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import Group from 'flarum/common/models/Group';
 import User from 'flarum/common/models/User';
-import username from 'flarum/common/helpers/username';
-import icon from 'flarum/common/helpers/icon';
-import KeyboardNavigatable from 'flarum/common/utils/KeyboardNavigatable';
 import Select from 'flarum/common/components/Select';
 import NotificationType from '../models/NotificationType';
+import RecipientPicker from '../../common/components/RecipientPicker';
+import { parseRecipients, resolveRecipients, Recipient } from '../../common/utils/recipients';
+import { getContrastTextColor } from '../../common/utils/color';
 
 interface NotificationUserModalAttrs extends IInternalModalAttrs {
     user?: User;
     forAll?: boolean;
 }
-
-type Recipient = Group | User;
 
 export default class NotificationUserModal extends Modal<NotificationUserModalAttrs> {
     sending: boolean = false;
@@ -24,23 +22,18 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
     messageText: string = '';
     notificationUrl: string = '';
     notificationIcon: string = '';
-    searchIndex: number = 0;
-    navigator: KeyboardNavigatable = new KeyboardNavigatable();
-    filter: string = '';
-    focused: boolean = false;
-    loadingResults: boolean = false;
-    searchResults: any[] = [];
-    searchTimeout: number = -1;
     allUsersText: string | null = null;
     notificationTypes: NotificationType[] | null = null;
     selectedNotificationType: string = '';
     loadingTypes = false;
-    private lastApiResults: User[] = [];
+    loadingRecipients = false;
+
+    /** Incremented every time updateFields() runs; used to discard stale async recipient lookups. */
+    private recipientsLoadToken = 0;
 
     oninit(vnode: Vnode) {
         super.oninit(vnode);
         this.recipients = [];
-        this.lastApiResults = [];
 
         if (this.attrs.user) {
             this.recipients.push(this.attrs.user);
@@ -49,33 +42,10 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         if (this.attrs.forAll) {
             const membersGroup = app.store.getById<Group>('groups', Group.MEMBER_ID)!;
             this.recipients.push(membersGroup);
-        }
-
-        if (this.attrs.forAll) {
             this.allUsersText = app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_all_members');
         } else {
             this.allUsersText = null;
         }
-
-        this.navigator
-            .when(event => event.key !== 'Tab' || !!this.filter)
-            .onUp(() => {
-                if (this.searchIndex > 0) {
-                    this.searchIndex--;
-                    m.redraw();
-                }
-            })
-            .onDown(() => {
-                if (this.searchIndex < this.searchResults.length - 1) {
-                    this.searchIndex++;
-                    m.redraw();
-                }
-            })
-            .onSelect(() => this.selectResult(this.searchResults[this.searchIndex]))
-            .onRemove(() => {
-                this.recipients.pop();
-                m.redraw();
-            });
 
         this.loadNotificationTypes();
     }
@@ -88,7 +58,7 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
             await app.store.find('notification-types');
             const allTypes = app.store.all<NotificationType>('notification-types');
             const activeTypes = allTypes.filter((item: NotificationType) => item.attribute('is_active'));
-            
+
             const userGroups = app.session.user ? (app.session.user.groups() || []).map((g: any) => g.id()) : [];
             const isAdmin = app.session.user && app.session.user.isAdmin();
 
@@ -96,14 +66,13 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 if (isAdmin) return true;
                 const perm = item.attribute('permission');
                 if (!perm) return true;
-                
+
                 const allowedGroupIds = perm.split(',');
                 return allowedGroupIds.some((id: string) => userGroups.includes(id));
             });
 
             this.notificationTypes = allowedTypes.sort(
-                (a: NotificationType, b: NotificationType) =>
-                    (a.attribute('sort_order') ?? 0) - (b.attribute('sort_order') ?? 0)
+                (a: NotificationType, b: NotificationType) => (a.attribute('sort_order') ?? 0) - (b.attribute('sort_order') ?? 0)
             );
 
             if (this.notificationTypes.length > 0) {
@@ -122,26 +91,18 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         this.notificationUrl = type.attribute('default_url') || '';
         this.notificationIcon = type.attribute('default_icon') || '';
         this.messageText = type.attribute('default_message_key') || '';
-        
-        this.recipients = [];
+
+        // Bump the token so any in-flight lookups from a previous type selection
+        // discard their results instead of mutating the (now stale) recipients list.
+        this.recipientsLoadToken += 1;
+        const token = this.recipientsLoadToken;
+        const isStale = () => token !== this.recipientsLoadToken;
+
         const defaultRecipients = type.attribute('default_recipients');
-        if (defaultRecipients) {
-            const items = defaultRecipients.split(',').map((i: string) => i.trim());
-            items.forEach((item: string) => {
-                const [rType, rId] = item.split(':');
-                if (rType === 'group') {
-                    const group = app.store.getById<Group>('groups', rId);
-                    if (group) this.recipients.push(group);
-                } else if (rType === 'user') {
-                    app.store.find<User>('users', rId).then((user) => {
-                        if (!this.recipients.some(r => r.data.type === 'users' && r.id() === user.id())) {
-                            this.recipients.push(user);
-                            m.redraw();
-                        }
-                    });
-                }
-            });
-        } else {
+        const refs = parseRecipients(defaultRecipients);
+
+        if (refs.length === 0) {
+            this.recipients = [];
             if (this.attrs.user) {
                 this.recipients.push(this.attrs.user);
             }
@@ -149,7 +110,26 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 const membersGroup = app.store.getById<Group>('groups', Group.MEMBER_ID)!;
                 this.recipients.push(membersGroup);
             }
+            this.loadingRecipients = false;
+            m.redraw();
+            return;
         }
+
+        this.recipients = [];
+        this.loadingRecipients = true;
+        m.redraw();
+
+        resolveRecipients(
+            refs,
+            (recipient) => {
+                this.recipients.push(recipient);
+            },
+            () => {
+                this.loadingRecipients = false;
+                m.redraw();
+            },
+            isStale
+        );
     }
 
     className() {
@@ -164,104 +144,43 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         this.$('form').find('.js-focus-on-load').first().focus().select();
     }
 
-    recipientLabel(recipient: Recipient) {
-        switch (recipient.data.type) {
-            case 'users':
-                return m('.RecipientLabel', username(recipient as User));
-            case 'groups':
-                const group = recipient as Group;
-                return m('.RecipientLabel', group.color() ? {
-                    className: 'colored',
-                    style: {
-                        backgroundColor: group.color(),
-                    },
-                } : {}, [
-                    group.icon() ? [
-                        icon(group.icon()!),
-                        ' ',
-                    ] : null,
-                    group.namePlural(),
-                ]);
-        }
-        return '[unknown]';
-    }
-
-    searchResultKind(recipient: Recipient) {
-        switch (recipient.data.type) {
-            case 'users':
-                return app.translator.trans('huseyinfiliz-notificationhub.forum.recipient_kinds.user');
-            case 'groups':
-                return app.translator.trans('huseyinfiliz-notificationhub.forum.recipient_kinds.group');
-        }
-        return '[unknown]';
-    }
-
-    selectResult(result: Recipient | null) {
-        if (!result) return;
-        this.recipients.push(result);
-        this.filter = '';
-        this.searchResults = [];
-        m.redraw();
-    }
-
     content() {
-        return m('.Modal-body', m('form.Form', {
-            onsubmit: this.onsubmit.bind(this),
-        }, [
-            this.recipientsField(),
-            this.typeSelectorField(),
-            this.messageField(),
-            this.urlField(),
-            this.previewField(),
-            this.submitButtonField()
-        ]));
+        return m(
+            '.Modal-body',
+            m(
+                'form.Form',
+                {
+                    onsubmit: this.onsubmit.bind(this),
+                },
+                [this.recipientsField(), this.typeSelectorField(), this.messageField(), this.urlField(), this.previewField(), this.submitButtonField()]
+            )
+        );
     }
 
     private recipientsField() {
         return m('.Form-group', [
             m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_label')),
-            m('.RecipientsInput.FormControl', {
-                className: this.focused ? 'focus' : '',
-            }, [
-                m('span.RecipientsInput-selected', this.recipients.map((recipient, index) => m('span.RecipientsInput-recipient', {
-                    onclick: () => {
-                        this.recipients.splice(index, 1);
-                        m.redraw();
-                    },
-                    title: this.searchResultKind(recipient),
-                }, this.recipientLabel(recipient)))),
-                m('input.FormControl', {
-                    placeholder: app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.recipients_placeholder'),
-                    value: this.filter,
-                    oninput: (event: InputEvent) => {
-                        this.filter = (event.target as HTMLInputElement).value;
-                        this.performNewSearch();
-                    },
-                    onkeydown: this.navigator.navigate.bind(this.navigator),
-                    onfocus: () => { this.focused = true; },
-                    onblur: () => { this.focused = false; },
-                    disabled: this.sending,
-                }),
-                this.loadingResults ? LoadingIndicator.component({ size: 'small' }) : null,
-                this.searchResults.length ? m('ul.Dropdown-menu', this.searchResults.map(
-                    (result, index) => m('li', {
-                        className: this.searchIndex === index ? 'active' : '',
-                        onclick: () => { this.selectResult(result); },
-                    }, m('button[type=button]', [
-                        m('span.SearchResultKind', this.searchResultKind(result)),
-                        this.recipientLabel(result),
-                    ]))
-                )) : null,
-            ]),
+            this.loadingRecipients
+                ? LoadingIndicator.component({ size: 'small' })
+                : m(RecipientPicker, {
+                      recipients: this.recipients,
+                      onChange: (recipients: Recipient[]) => {
+                          this.recipients = recipients;
+                      },
+                      searchGroups: app.forum.huseyinfilizNotificationAll(),
+                      searchUsers: true,
+                      disabled: this.sending,
+                      translationPrefix: 'huseyinfiliz-notificationhub.forum',
+                  }),
         ]);
     }
 
     private typeSelectorField() {
         const notificationTypeOptions: { [key: string]: string } = {};
-        let selectBody: any = "Custom";
+        let selectBody: any = 'Custom';
 
         if (this.notificationTypes && this.notificationTypes.length > 0) {
-            this.notificationTypes.forEach(type => {
+            this.notificationTypes.forEach((type) => {
                 notificationTypeOptions[type.id()!] = type.attribute('name');
             });
 
@@ -270,7 +189,7 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 value: this.selectedNotificationType,
                 onchange: (value: string) => {
                     this.selectedNotificationType = value;
-                    const selectedType = this.notificationTypes!.find(type => type.id() === value);
+                    const selectedType = this.notificationTypes!.find((type) => type.id() === value);
                     if (selectedType) {
                         this.updateFields(selectedType);
                     }
@@ -317,34 +236,57 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
     }
 
     private previewField() {
+        const selectedType = this.notificationTypes?.find((type) => type.id() === this.selectedNotificationType);
+        const previewColor = selectedType?.attribute('color') || null;
+        const textColor = getContrastTextColor(previewColor);
+
         return m('.Form-group', [
             m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_title')),
-            m('.NotificationPreview-content',
-                m('ul.NotificationGroup-content',
-                    m('li',
-                        m('a.Notification.Notification--customNotification', [
-                            m('span.Avatar.Notification-avatar',
+            m(
+                '.NotificationPreview-content',
+                m(
+                    'ul.NotificationGroup-content',
+                    m(
+                        'li',
+                        m(
+                            `a.Notification.Notification--customNotification`,
+                            {
+                                style: previewColor
+                                    ? { backgroundColor: previewColor, ...(textColor ? { '--notificationhub-text-color': textColor } : {}) }
+                                    : {},
+                            },
+                            [
+                            m(
+                                'span.Avatar.Notification-avatar',
                                 {
                                     className: 'Avatar Notification-avatar',
                                     style: app.session.user
                                         ? {
-                                            'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
-                                            'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null
-                                        }
-                                        : {}
+                                              'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
+                                              'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null,
+                                          }
+                                        : {},
                                 },
-                                app.session.user && !app.session.user.avatarUrl()
-                                    ? app.session.user.username()?.charAt(0).toUpperCase()
-                                    : null
+                                app.session.user && !app.session.user.avatarUrl() ? app.session.user.username()?.charAt(0).toUpperCase() : null
                             ),
-                            m('i.icon.Notification-icon', { className: this.notificationIcon ? `icon ${this.notificationIcon} Notification-icon` : 'icon fas fa-bell Notification-icon' }),
-                            m('span.Notification-title',
-                                m('span.Notification-content',
-                                    m('div.NotificationPreview-messageText', this.messageText || m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder')))
+                            m('i.icon.Notification-icon', {
+                                className: this.notificationIcon ? `icon ${this.notificationIcon} Notification-icon` : 'icon fas fa-bell Notification-icon',
+                            }),
+                            m(
+                                'span.Notification-title',
+                                m(
+                                    'span.Notification-content',
+                                    m(
+                                        'div.NotificationPreview-messageText',
+                                        this.messageText || m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder'))
+                                    )
                                 ),
                                 m('span.Notification-title-spring')
                             ),
-                            m('div.Notification-excerpt', this.selectedNotificationType ? String(this.notificationTypes?.find(type => type.id() === this.selectedNotificationType)?.attribute('excerpt_key') || '') : "")
+                            m(
+                                'div.Notification-excerpt',
+                                this.selectedNotificationType ? String(selectedType?.attribute('excerpt_key') || '') : ''
+                            ),
                         ])
                     )
                 )
@@ -354,69 +296,16 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
 
     private submitButtonField() {
         return m('.Form-group', [
-            Button.component({
-                type: 'submit',
-                className: 'Button Button--primary SendNotificationModal-send',
-                loading: this.sending,
-                disabled: this.recipients.length === 0 || this.messageText === '' || !this.selectedNotificationType,
-            }, app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.submit_button'))
+            Button.component(
+                {
+                    type: 'submit',
+                    className: 'Button Button--primary SendNotificationModal-send',
+                    loading: this.sending,
+                    disabled: this.recipients.length === 0 || this.messageText === '' || !this.selectedNotificationType || this.loadingRecipients,
+                },
+                app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.submit_button')
+            ),
         ]);
-    }
-
-    performNewSearch() {
-        this.searchIndex = 0;
-        const query = this.filter.toLowerCase();
-        this.buildSearchResults(query);
-
-        clearTimeout(this.searchTimeout);
-        if (query.length >= 3) {
-            this.searchTimeout = setTimeout(() => {
-                this.loadingResults = true;
-                m.redraw();
-
-                app.store.find('users', {
-                    filter: { q: query },
-                    page: { limit: 5 }
-                }).then((results: any) => {
-                    this.loadingResults = false;
-                    this.lastApiResults = results || [];
-                    this.buildSearchResults(query);
-                    m.redraw();
-                });
-            }, 250) as any;
-        }
-    }
-
-    buildSearchResults(query: string) {
-        if (!query) {
-            this.searchResults = [];
-            return;
-        }
-
-        const results: Recipient[] = [];
-
-        if (app.forum.huseyinfilizNotificationAll()) {
-            app.store.all<Group>('groups').forEach(group => {
-                if (group.id() === Group.GUEST_ID) return;
-                if (group.nameSingular().toLowerCase().indexOf(query) !== -1 || group.namePlural().toLowerCase().indexOf(query) !== -1) {
-                    results.push(group);
-                }
-            });
-        }
-
-        this.lastApiResults.forEach(user => {
-            if (user.username().toLowerCase().indexOf(query) !== -1) {
-                results.push(user);
-            }
-        });
-
-        this.searchResults = results.filter(result => {
-            return !this.recipients.some(
-                recipient => recipient.data.type === result.data.type && recipient.id() === result.id()
-            );
-        });
-
-        m.redraw();
     }
 
     onsubmit(event: SubmitEvent) {
@@ -424,9 +313,9 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
         this.sending = true;
         m.redraw();
 
-        const selectedUsers = this.recipients.filter(r => r.data.type === 'users').map(r => r.id());
-        const selectedGroups = this.recipients.filter(r => r.data.type === 'groups').map(r => r.id());
-        this.sendNotification(selectedUsers, selectedGroups);
+        const selectedUsers = this.recipients.filter((r) => r.data.type === 'users').map((r) => r.id());
+        const selectedGroups = this.recipients.filter((r) => r.data.type === 'groups').map((r) => r.id());
+        this.sendNotification(selectedUsers as number[], selectedGroups as number[]);
     }
 
     sendNotification(selectedUsers: number[], selectedGroups: number[]) {
@@ -453,14 +342,14 @@ export default class NotificationUserModal extends Modal<NotificationUserModalAt
                 const successMessage = app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.notification_sent_message', {
                     recipientsCount: response.recipientsCount,
                 });
-                app.alerts.show({ type: 'success' }, successMessage)
+                app.alerts.show({ type: 'success' }, successMessage);
                 this.hide();
             },
-            response => {
+            (response) => {
                 this.sending = false;
                 m.redraw();
                 this.onerror(response);
-                console.error("Error", response);
+                console.error('Error', response);
             }
         );
     }
