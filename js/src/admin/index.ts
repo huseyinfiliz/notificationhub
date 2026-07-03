@@ -6,7 +6,7 @@ import NotificationType from '../forum/models/NotificationType';
 app.initializers.add('huseyinfiliz-notificationhub', () => {
   app.store.models['notification-types'] = NotificationType;
 
-  app.extensionData
+  app.registry
     .for('huseyinfiliz-notificationhub')
     .registerPage(SettingsPage)
     .registerPermission(

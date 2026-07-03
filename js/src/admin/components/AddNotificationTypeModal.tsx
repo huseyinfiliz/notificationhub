@@ -1,5 +1,6 @@
 import app from 'flarum/admin/app';
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import Switch from 'flarum/common/components/Switch';
@@ -11,12 +12,12 @@ import { getContrastTextColor } from '../../common/utils/color';
 
 const HEX_COLOR_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
-interface NotificationTypeModalAttrs extends IInternalModalAttrs {
+interface NotificationTypeModalAttrs extends IFormModalAttrs {
   notificationType?: NotificationType;
   onSave: (notificationType: NotificationType) => void;
 }
 
-export default class AddNotificationTypeModal extends Modal<NotificationTypeModalAttrs> {
+export default class AddNotificationTypeModal extends FormModal<NotificationTypeModalAttrs> {
   private formData: any = {};
   private sending: boolean = false;
   private recipients: Recipient[] = [];

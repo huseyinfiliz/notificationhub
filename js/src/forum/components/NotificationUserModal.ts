@@ -1,6 +1,7 @@
 import { Vnode } from 'mithril';
 import app from 'flarum/forum/app';
-import Modal, { IInternalModalAttrs } from 'flarum/common/components/Modal';
+import { IFormModalAttrs } from 'flarum/common/components/FormModal';
+import FormModal from 'flarum/common/components/FormModal';
 import Button from 'flarum/common/components/Button';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import Group from 'flarum/common/models/Group';
@@ -11,12 +12,12 @@ import RecipientPicker from '../../common/components/RecipientPicker';
 import { parseRecipients, resolveRecipients, Recipient } from '../../common/utils/recipients';
 import { getContrastTextColor } from '../../common/utils/color';
 
-interface NotificationUserModalAttrs extends IInternalModalAttrs {
+interface NotificationUserModalAttrs extends IFormModalAttrs {
   user?: User;
   forAll?: boolean;
 }
 
-export default class NotificationUserModal extends Modal<NotificationUserModalAttrs> {
+export default class NotificationUserModal extends FormModal<NotificationUserModalAttrs> {
   sending: boolean = false;
   recipients: Recipient[] = [];
   messageText: string = '';

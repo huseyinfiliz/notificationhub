@@ -3,7 +3,7 @@ import Component, { ComponentAttrs } from 'flarum/common/Component';
 import LoadingIndicator from 'flarum/common/components/LoadingIndicator';
 import KeyboardNavigatable from 'flarum/common/utils/KeyboardNavigatable';
 import username from 'flarum/common/helpers/username';
-import icon from 'flarum/common/helpers/icon';
+import Icon from 'flarum/common/components/Icon';
 import Group from 'flarum/common/models/Group';
 import User from 'flarum/common/models/User';
 import { getContrastTextColor } from '../utils/color';
@@ -88,7 +88,14 @@ export default class RecipientPicker extends Component<RecipientPickerAttrs> {
           className={'RecipientLabel' + (group.color() ? ' colored' : '')}
           style={group.color() ? { backgroundColor: group.color(), color: textColor || undefined } : {}}
         >
-          {group.icon() ? [icon(group.icon()!), ' '] : null}
+          {group.icon()
+            ? [
+                Icon.component({
+                  name: group.icon()!,
+                }),
+                ' ',
+              ]
+            : null}
           {group.namePlural()}
         </span>
       );
