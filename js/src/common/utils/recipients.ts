@@ -5,8 +5,8 @@ import User from 'flarum/common/models/User';
 export type Recipient = Group | User;
 
 export interface ParsedRecipientRef {
-    kind: 'user' | 'group';
-    id: string;
+  kind: 'user' | 'group';
+  id: string;
 }
 
 /**
@@ -15,33 +15,33 @@ export interface ParsedRecipientRef {
  * before any async lookups.
  */
 export function parseRecipients(raw: string | null | undefined): ParsedRecipientRef[] {
-    if (!raw) {
-        return [];
-    }
+  if (!raw) {
+    return [];
+  }
 
-    return raw
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .map((item) => {
-            const [kind, id] = item.split(':').map((part) => part.trim());
-            return { kind: kind as 'user' | 'group', id };
-        })
-        .filter((ref) => (ref.kind === 'user' || ref.kind === 'group') && !!ref.id);
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => {
+      const [kind, id] = item.split(':').map((part) => part.trim());
+      return { kind: kind as 'user' | 'group', id };
+    })
+    .filter((ref) => (ref.kind === 'user' || ref.kind === 'group') && !!ref.id);
 }
 
 /**
  * Serializes a list of Group/User models back into the "user:1,group:2" format.
  */
 export function serializeRecipients(recipients: Recipient[]): string | null {
-    const serialized = recipients
-        .map((recipient) => {
-            const kind = recipient.data.type === 'users' ? 'user' : 'group';
-            return `${kind}:${recipient.id()}`;
-        })
-        .join(',');
+  const serialized = recipients
+    .map((recipient) => {
+      const kind = recipient.data.type === 'users' ? 'user' : 'group';
+      return `${kind}:${recipient.id()}`;
+    })
+    .join(',');
 
-    return serialized || null;
+  return serialized || null;
 }
 
 /**
@@ -58,46 +58,46 @@ export function serializeRecipients(recipients: Recipient[]): string | null {
  * (found or not) have settled.
  */
 export function resolveRecipients(
-    refs: ParsedRecipientRef[],
-    onEach: (recipient: Recipient) => void,
-    onDone: () => void,
-    isStale: () => boolean
+  refs: ParsedRecipientRef[],
+  onEach: (recipient: Recipient) => void,
+  onDone: () => void,
+  isStale: () => boolean
 ): void {
-    if (refs.length === 0) {
-        onDone();
-        return;
+  if (refs.length === 0) {
+    onDone();
+    return;
+  }
+
+  let remaining = refs.length;
+
+  const settle = () => {
+    remaining -= 1;
+    if (remaining === 0 && !isStale()) {
+      onDone();
     }
+  };
 
-    let remaining = refs.length;
-
-    const settle = () => {
-        remaining -= 1;
-        if (remaining === 0 && !isStale()) {
-            onDone();
-        }
-    };
-
-    refs.forEach((ref) => {
-        if (ref.kind === 'group') {
-            const group = app.store.getById<Group>('groups', ref.id);
-            if (group && !isStale()) {
-                onEach(group);
-            }
-            settle();
-        } else {
-            app.store
-                .find<User>('users', ref.id)
-                .then((user) => {
-                    if (user && !isStale()) {
-                        onEach(user as unknown as User);
-                    }
-                })
-                .catch(() => {
-                    // Deleted/unknown user referenced by a stored default — ignore silently.
-                })
-                .finally(() => {
-                    settle();
-                });
-        }
-    });
+  refs.forEach((ref) => {
+    if (ref.kind === 'group') {
+      const group = app.store.getById<Group>('groups', ref.id);
+      if (group && !isStale()) {
+        onEach(group);
+      }
+      settle();
+    } else {
+      app.store
+        .find<User>('users', ref.id)
+        .then((user) => {
+          if (user && !isStale()) {
+            onEach(user as unknown as User);
+          }
+        })
+        .catch(() => {
+          // Deleted/unknown user referenced by a stored default — ignore silently.
+        })
+        .finally(() => {
+          settle();
+        });
+    }
+  });
 }
