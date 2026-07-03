@@ -17,11 +17,8 @@ class CreateNotificationController extends AbstractCreateController
 {
     public $serializer = NotificationTypeSerializer::class;
 
-    protected $translator;
-
-    public function __construct(Translator $translator)
+    public function __construct(protected Translator $translator)
     {
-        $this->translator = $translator;
     }
 
     protected function data(Request $request, Document $document)

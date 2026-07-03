@@ -26,7 +26,7 @@ return [
     (new Extend\Locales(__DIR__ . '/resources/locale')),
 
     (new Extend\Notification())
-        ->type(CustomNotificationBlueprint::class, NotificationTypeSerializer::class, ['alert']),
+        ->type(CustomNotificationBlueprint::class, ['alert']),
 
     (new Extend\Routes('api'))
         ->get('/notification-types', 'huseyinfiliz.notification-types.list', ListNotificationController::class)

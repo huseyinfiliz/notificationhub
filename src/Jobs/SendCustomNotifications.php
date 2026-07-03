@@ -15,21 +15,8 @@ class SendCustomNotifications implements ShouldQueue
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 
-    protected array $selectionCriteria;
-    protected string $messageText;
-    protected ?int $fromUserId;
-    protected int $subjectId;
-    protected string $url;
-    protected string $icon;
-
-    public function __construct(array $selectionCriteria, string $messageText, ?int $fromUserId, int $subjectId, string $url, string $icon)
+    public function __construct(protected array $selectionCriteria, protected string $messageText, protected ?int $fromUserId, protected int $subjectId, protected string $url, protected string $icon)
     {
-        $this->selectionCriteria = $selectionCriteria;
-        $this->messageText = $messageText;
-        $this->fromUserId = $fromUserId;
-        $this->subjectId = $subjectId;
-        $this->url = $url;
-        $this->icon = $icon;
     }
 
     public function handle(NotificationSyncer $notificationSyncer)
