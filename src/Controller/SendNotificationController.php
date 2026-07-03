@@ -1,6 +1,6 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Controller;
+namespace HuseyinFiliz\NotificationHub\Controller;
 
 use Flarum\Foundation\ValidationException;
 use Flarum\Http\RequestUtil;
@@ -14,11 +14,11 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Flarum\Group\Group;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
-use huseyinfiliz\notificationhub\Jobs\SendCustomNotifications;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Jobs\SendCustomNotifications;
 use Illuminate\Contracts\Queue\Queue;
 use Illuminate\Support\Collection;
-use huseyinfiliz\notificationhub\Utils\UrlValidator;
+use HuseyinFiliz\NotificationHub\Utils\UrlValidator;
 
 class SendNotificationController implements RequestHandlerInterface
 {

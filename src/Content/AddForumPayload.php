@@ -1,6 +1,6 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Content;
+namespace HuseyinFiliz\NotificationHub\Content;
 
 use Flarum\Frontend\Document;
 use Flarum\Http\RequestUtil;

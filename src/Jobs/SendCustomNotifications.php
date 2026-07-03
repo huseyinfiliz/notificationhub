@@ -1,6 +1,6 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Jobs;
+namespace HuseyinFiliz\NotificationHub\Jobs;
 
 use Flarum\User\User;
 use Flarum\Notification\NotificationSyncer;
@@ -8,8 +8,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
-use huseyinfiliz\notificationhub\Notification\CustomNotificationBlueprint;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Notification\CustomNotificationBlueprint;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
 
 class SendCustomNotifications implements ShouldQueue
 {

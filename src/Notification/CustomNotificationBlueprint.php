@@ -1,12 +1,12 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Notification;
+namespace HuseyinFiliz\NotificationHub\Notification;
 
 use Flarum\Notification\AlertableInterface;
 use Flarum\Notification\Blueprint\BlueprintInterface;
 use Flarum\User\User;
 use Illuminate\Support\Str;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
 
 class CustomNotificationBlueprint implements BlueprintInterface, AlertableInterface
 {

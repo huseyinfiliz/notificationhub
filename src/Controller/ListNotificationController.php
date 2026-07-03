@@ -1,31 +1,32 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Controller;
+namespace HuseyinFiliz\NotificationHub\Controller;
 
-use Flarum\Api\Controller\AbstractListController;
 use Flarum\Http\RequestUtil;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Tobscure\JsonApi\Document;
+use Flarum\User\Exception\PermissionDeniedException;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Serializer\NotificationTypeSerializer;
+use Laminas\Diactoros\Response\JsonResponse;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
- */
-class ListNotificationController extends AbstractListController
+class ListNotificationController implements RequestHandlerInterface
 {
-    public $serializer = \huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer::class;
-
-    protected function data(Request $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
 
         if (!$actor->can('huseyinfiliz-notificationhub.send-all') && !$actor->can('huseyinfiliz-notificationhub.send-user')) {
-            throw new \Flarum\User\Exception\PermissionDeniedException();
+            throw new PermissionDeniedException();
         }
 
-        return NotificationHub::get();
+        $notificationTypes = NotificationHub::get();
+
+        return new JsonResponse([
+            'data' => $notificationTypes
+                ->map(fn (NotificationHub $model) => NotificationTypeSerializer::resource($model))
+                ->all(),
+        ]);
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Utils;
+namespace HuseyinFiliz\NotificationHub\Utils;
 
 use Flarum\Foundation\ValidationException;
 use Illuminate\Contracts\Translation\Translator;

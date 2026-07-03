@@ -1,5 +1,5 @@
 <?php
-namespace huseyinfiliz\notificationhub\Model;
+namespace HuseyinFiliz\NotificationHub\Model;
 
 use Flarum\Database\AbstractModel;
 
@@ -27,6 +27,4 @@ class NotificationHub extends AbstractModel
 		'created_at' => 'datetime',
 		'updated_at' => 'datetime',
     ];
-
-    // Gereksiz ilişki kaldırıldı
 }

@@ -13,6 +13,10 @@
     "require": {
         "flarum/core": "^2.0.0-beta"
     },
+    "require-dev": {
+        "flarum/testing": "^2.0",
+        "flarum/phpstan": "^2.0"
+    },
     "authors": [
         {
             "name": "Hüseyin Filiz",
@@ -27,7 +31,7 @@
     },
     "autoload": {
         "psr-4": {
-            "huseyinfiliz\\notificationhub\\": "src/"
+            "HuseyinFiliz\\NotificationHub\\": "src/"
         }
     },
     "extra": {

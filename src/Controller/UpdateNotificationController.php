@@ -1,38 +1,32 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Controller;
+namespace HuseyinFiliz\NotificationHub\Controller;
 
-use Flarum\Api\Controller\AbstractShowController;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Tobscure\JsonApi\Document;
-use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
-use Flarum\Http\RequestUtil;
-use Illuminate\Support\Arr;
 use Flarum\Foundation\ValidationException;
+use Flarum\Http\RequestUtil;
+use Flarum\User\Exception\PermissionDeniedException;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Serializer\NotificationTypeSerializer;
+use HuseyinFiliz\NotificationHub\Utils\UrlValidator;
 use Illuminate\Contracts\Translation\Translator;
-use huseyinfiliz\notificationhub\Utils\UrlValidator;
+use Illuminate\Support\Arr;
+use Laminas\Diactoros\Response\JsonResponse;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
- */
-class UpdateNotificationController extends AbstractShowController
+class UpdateNotificationController implements RequestHandlerInterface
 {
-    public $serializer = NotificationTypeSerializer::class;
-
     public function __construct(protected Translator $translator)
     {
     }
 
-    protected function data(Request $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
 
         if (!$actor->can('huseyinfiliz-notificationhub.send-all')) {
-            throw new \Flarum\User\Exception\PermissionDeniedException();
+            throw new PermissionDeniedException();
         }
 
         $id = Arr::get($request->getAttribute('routeParameters'), 'id');
@@ -131,6 +125,8 @@ class UpdateNotificationController extends AbstractShowController
 
         $notificationType->update($dirty);
 
-        return $notificationType;
+        return new JsonResponse([
+            'data' => NotificationTypeSerializer::resource($notificationType),
+        ]);
     }
 }

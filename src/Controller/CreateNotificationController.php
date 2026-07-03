@@ -1,33 +1,26 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Controller;
+namespace HuseyinFiliz\NotificationHub\Controller;
 
-use Flarum\Api\Controller\AbstractCreateController;
-use Flarum\Http\RequestUtil;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
-use Psr\Http\Message\ServerRequestInterface as Request;
-use Tobscure\JsonApi\Document;
-use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
-use Illuminate\Support\Arr;
 use Flarum\Foundation\ValidationException;
+use Flarum\Http\RequestUtil;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Serializer\NotificationTypeSerializer;
+use HuseyinFiliz\NotificationHub\Utils\UrlValidator;
 use Illuminate\Contracts\Translation\Translator;
-use huseyinfiliz\notificationhub\Utils\UrlValidator;
+use Illuminate\Support\Arr;
+use Laminas\Diactoros\Response\JsonResponse;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-/**
- * @TODO: Remove this in favor of one of the API resource classes that were added.
- *      Or extend an existing API Resource to add this to.
- *      Or use a vanilla RequestHandlerInterface controller.
- *      @link https://docs.flarum.org/2.x/extend/api#endpoints
- */
-class CreateNotificationController extends AbstractCreateController
+class CreateNotificationController implements RequestHandlerInterface
 {
-    public $serializer = NotificationTypeSerializer::class;
-
     public function __construct(protected Translator $translator)
     {
     }
 
-    protected function data(Request $request, Document $document)
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
         $actor->assertCan('huseyinfiliz-notificationhub.send-all');
@@ -104,6 +97,8 @@ class CreateNotificationController extends AbstractCreateController
 
         $notificationType->save();
 
-        return $notificationType;
+        return new JsonResponse([
+            'data' => NotificationTypeSerializer::resource($notificationType),
+        ], 201);
     }
 }

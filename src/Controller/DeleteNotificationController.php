@@ -1,16 +1,18 @@
 <?php
 
-namespace huseyinfiliz\notificationhub\Controller;
+namespace HuseyinFiliz\NotificationHub\Controller;
 
-use Flarum\Api\Controller\AbstractDeleteController;
 use Flarum\Http\RequestUtil;
-use huseyinfiliz\notificationhub\Model\NotificationHub;
+use HuseyinFiliz\NotificationHub\Model\NotificationHub;
 use Illuminate\Support\Arr;
+use Laminas\Diactoros\Response\EmptyResponse;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class DeleteNotificationController extends AbstractDeleteController
+class DeleteNotificationController implements RequestHandlerInterface
 {
-    protected function delete(ServerRequestInterface $request): void
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         $actor = RequestUtil::getActor($request);
 
@@ -26,5 +28,7 @@ class DeleteNotificationController extends AbstractDeleteController
             ->firstOrFail();
 
         $notificationType->delete();
+
+        return new EmptyResponse(204);
     }
 }

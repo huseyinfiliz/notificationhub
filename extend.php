@@ -1,21 +1,17 @@
 <?php
 
-namespace huseyinfiliz\notificationhub;
+namespace HuseyinFiliz\NotificationHub;
 
-use Flarum\Api\Serializer\ForumSerializer;
-use Flarum\Extend;
-use huseyinfiliz\notificationhub\Notification\CustomNotificationBlueprint;
-use huseyinfiliz\notificationhub\Controller\SendNotificationController;
-use huseyinfiliz\notificationhub\Controller\UpdateNotificationController;
-use huseyinfiliz\notificationhub\Controller\CreateNotificationController;
-use huseyinfiliz\notificationhub\Controller\ListNotificationController;
-use huseyinfiliz\notificationhub\Controller\DeleteNotificationController;
-use huseyinfiliz\notificationhub\Serializer\NotificationTypeSerializer;
-use huseyinfiliz\notificationhub\Content\AddForumPayload;
-use Flarum\Api\Context;
-use Flarum\Api\Endpoint;
-use Flarum\Api\Resource;
+use Flarum\Api\Resource\ForumResource;
 use Flarum\Api\Schema;
+use Flarum\Extend;
+use HuseyinFiliz\NotificationHub\Notification\CustomNotificationBlueprint;
+use HuseyinFiliz\NotificationHub\Controller\SendNotificationController;
+use HuseyinFiliz\NotificationHub\Controller\UpdateNotificationController;
+use HuseyinFiliz\NotificationHub\Controller\CreateNotificationController;
+use HuseyinFiliz\NotificationHub\Controller\ListNotificationController;
+use HuseyinFiliz\NotificationHub\Controller\DeleteNotificationController;
+use HuseyinFiliz\NotificationHub\Content\AddForumPayload;
 
 return [
     (new Extend\Frontend('forum'))
@@ -39,16 +35,12 @@ return [
         ->patch('/notification-types/{id}', 'huseyinfiliz.notification-types.update', UpdateNotificationController::class)
         ->post('/notifications/send', 'huseyinfiliz.notification.send', SendNotificationController::class),
 
-    // @TODO: Replace with the new implementation https://docs.flarum.org/2.x/extend/api#extending-api-resources
-    (new Extend\ApiSerializer(ForumSerializer::class))
-        ->attributes(function (ForumSerializer $serializer): array {
-            $actor = $serializer->getActor();
+    (new Extend\ApiResource(ForumResource::class))
+        ->fields(fn () => [
+            Schema\Boolean::make('huseyinfilizNotificationAll')
+                ->get(fn ($model, $context) => $context->getActor()->can('huseyinfiliz-notificationhub.send-all')),
 
-            return [
-                'huseyinfilizNotificationAll' => $actor->can('huseyinfiliz-notificationhub.send-all'),
-                'huseyinfilizNotificationUser' => $actor->can('huseyinfiliz-notificationhub.send-user'),
-                new Extend\ApiResource(Api\Resource\NotificationTypeResource::class),
-            ];
-        }),
-    new Extend\ApiResource(Api\Resource\NotificationTypeResource::class),
+            Schema\Boolean::make('huseyinfilizNotificationUser')
+                ->get(fn ($model, $context) => $context->getActor()->can('huseyinfiliz-notificationhub.send-user')),
+        ]),
 ];
