@@ -5,6 +5,7 @@ namespace HuseyinFiliz\NotificationHub;
 use Flarum\Api\Resource\ForumResource;
 use Flarum\Api\Schema;
 use Flarum\Extend;
+use HuseyinFiliz\NotificationHub\Api\Resource\NotificationTypeResource;
 use HuseyinFiliz\NotificationHub\Notification\CustomNotificationBlueprint;
 use HuseyinFiliz\NotificationHub\Controller\SendNotificationController;
 use HuseyinFiliz\NotificationHub\Controller\UpdateNotificationController;
@@ -27,6 +28,8 @@ return [
 
     (new Extend\Notification())
         ->type(CustomNotificationBlueprint::class, ['alert']),
+
+    new Extend\ApiResource(NotificationTypeResource::class),
 
     (new Extend\Routes('api'))
         ->get('/notification-types', 'huseyinfiliz.notification-types.list', ListNotificationController::class)

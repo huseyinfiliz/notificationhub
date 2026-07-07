@@ -47,3 +47,82 @@
     background-repeat: no-repeat;
     background-position: center center;
 }
+
+// The real `.Notification` layout rules in Flarum core are scoped to the
+// actual notifications dropdown, so they don't apply when we reuse the same
+// markup/classes standalone here. Define a self-contained layout instead of
+// depending on core's context-scoped CSS (which can change between versions).
+.NotificationPreview-content {
+    .NotificationGroup-content {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .Notification {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 8px 12px;
+        text-decoration: none;
+        position: relative;
+        color: var(--text-color);
+    }
+
+    .Notification-avatar {
+        position: relative;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .Notification-icon {
+        position: absolute;
+        left: 24px;
+        top: 24px;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        background: var(--body-bg);
+        border-radius: 50%;
+        box-shadow: 0 0 0 2px var(--body-bg);
+    }
+
+    .Notification-title {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding-top: 2px;
+    }
+
+    .Notification-content {
+        display: block;
+        word-wrap: break-word;
+    }
+
+    .Notification-title-spring {
+        display: none;
+    }
+
+    .Notification-excerpt {
+        font-size: 0.85em;
+        opacity: 0.7;
+        margin-top: 2px;
+        word-wrap: break-word;
+
+        &:empty {
+            display: none;
+        }
+    }
+}
+
