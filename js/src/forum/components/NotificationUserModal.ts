@@ -244,47 +244,53 @@ export default class NotificationUserModal extends FormModal<NotificationUserMod
     return m('.Form-group', [
       m('label', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_title')),
       m(
-        '.NotificationPreview-content',
+        '.HeaderList.NotificationList.NotificationPreview-content',
         m(
-          'ul.NotificationGroup-content',
+          '.HeaderList-content',
           m(
-            'li',
+            '.HeaderListGroup',
             m(
-              `a.Notification.Notification--customNotification`,
-              {
-                style: previewColor ? { backgroundColor: previewColor, ...(textColor ? { '--notificationhub-text-color': textColor } : {}) } : {},
-              },
-              [
+              'ul.HeaderListGroup-content',
+              m(
+                'li',
                 m(
-                  'span.Avatar.Notification-avatar',
+                  `a.HeaderListItem.Notification.Notification--customNotification`,
                   {
-                    className: 'Avatar Notification-avatar',
-                    style: app.session.user
-                      ? {
-                          'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
-                          'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null,
-                        }
-                      : {},
+                    style: previewColor ? { backgroundColor: previewColor, ...(textColor ? { '--notificationhub-text-color': textColor } : {}) } : {},
                   },
-                  app.session.user && !app.session.user.avatarUrl() ? app.session.user.username()?.charAt(0).toUpperCase() : null
-                ),
-                m('i.icon.Notification-icon', {
-                  className: this.notificationIcon ? `icon ${this.notificationIcon} Notification-icon` : 'icon fas fa-bell Notification-icon',
-                }),
-                m(
-                  'span.Notification-title',
-                  m(
-                    'span.Notification-content',
+                  [
                     m(
-                      'div.NotificationPreview-messageText',
-                      this.messageText ||
-                        m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder'))
-                    )
-                  ),
-                  m('span.Notification-title-spring')
-                ),
-                m('div.Notification-excerpt', this.selectedNotificationType ? String(selectedType?.attribute('excerpt_key') || '') : ''),
-              ]
+                      'span.Avatar',
+                      {
+                        style: app.session.user
+                          ? {
+                              'background-image': app.session.user.avatarUrl() ? `url(${app.session.user.avatarUrl()})` : null,
+                              'background-color': !app.session.user.avatarUrl() ? '#e5a2a0' : null,
+                            }
+                          : {},
+                      },
+                      app.session.user && !app.session.user.avatarUrl() ? app.session.user.username()?.charAt(0).toUpperCase() : null
+                    ),
+                    m('i.icon.HeaderListItem-icon', {
+                      className: this.notificationIcon ? `icon ${this.notificationIcon} HeaderListItem-icon` : 'icon fas fa-bell HeaderListItem-icon',
+                    }),
+                    m(
+                      'span.HeaderListItem-title',
+                      m(
+                        'span.HeaderListItem-content',
+                        m(
+                          'div.NotificationPreview-messageText',
+                          this.messageText ||
+                            m('em', app.translator.trans('huseyinfiliz-notificationhub.forum.modal_notification.preview_message_placeholder'))
+                        )
+                      ),
+                      m('span.HeaderListItem-title-spring')
+                    ),
+                    m('div.HeaderListItem-actions'),
+                    m('div.HeaderListItem-excerpt', this.selectedNotificationType ? String(selectedType?.attribute('excerpt_key') || '') : ''),
+                  ]
+                )
+              )
             )
           )
         )

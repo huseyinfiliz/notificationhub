@@ -202,6 +202,7 @@
     padding: 12px;
     border: 1px dashed var(--control-bg);
     border-radius: var(--border-radius);
+	width: stretch;
 
     .NotificationGroup-content {
       list-style: none;
@@ -223,31 +224,31 @@
       &[style*="--notificationhub-text-color"] {
         color: var(--notificationhub-text-color) !important;
 
-        .Notification-content, .Notification-excerpt, .icon {
+        .HeaderListItem-content, .HeaderListItem-excerpt, .icon {
           color: var(--notificationhub-text-color) !important;
         }
       }
     }
 
-    .Notification-icon {
+    .HeaderListItem-icon {
       flex-shrink: 0;
       font-size: 16px;
       margin-top: 2px;
     }
 
-    .Notification-title {
+    .HeaderListItem-title {
       display: flex;
       flex-direction: column;
       flex: 1;
       min-width: 0;
     }
 
-    .Notification-content {
+    .HeaderListItem-content {
       font-weight: 600;
       word-break: break-word;
     }
 
-    .Notification-excerpt {
+    .HeaderListItem-excerpt {
       font-size: 12px;
       opacity: 0.8;
       margin-top: 2px;

@@ -254,16 +254,16 @@ export default class AddNotificationTypeModal extends FormModal<NotificationType
                 style: color ? { backgroundColor: color, ...(textColor ? { '--notificationhub-text-color': textColor } : {}) } : {},
               },
               [
-                m('i.icon.Notification-icon', {
+                m('i.icon.HeaderListItem-icon', {
                   className: this.formData.default_icon
-                    ? `icon ${this.formData.default_icon} Notification-icon`
-                    : 'icon fas fa-bell Notification-icon',
+                    ? `icon ${this.formData.default_icon} HeaderListItem-icon`
+                    : 'icon fas fa-bell HeaderListItem-icon',
                 }),
-                m('span.Notification-title', [
-                  m('span.Notification-content', this.formData.name || t('fields.preview_placeholder')),
-                  m('span.Notification-title-spring'),
+                m('span.HeaderListItem-title', [
+                  m('span.HeaderListItem-content', this.formData.name || t('fields.preview_placeholder')),
+                  m('span.HeaderListItem-title-spring'),
                 ]),
-                m('div.Notification-excerpt', this.formData.excerpt_key || ''),
+                m('div.HeaderListItem-excerpt', this.formData.excerpt_key || ''),
               ]
             )
           )
